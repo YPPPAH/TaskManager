@@ -16,6 +16,9 @@
     --cat-exam: #ff4444; 
     --cat-task: #ff66b2; 
     --cat-overdue: #800080; 
+    --cat-game: #ffa500; /* Orange */
+    --cat-study: #007bff; /* Blue */
+    --cat-task-deadline: #9370db; /* Medium Purple */
 }
 
 body {
@@ -179,6 +182,10 @@ body {
     border-left-color: var(--cat-overdue); 
     color: #d8b4e2;
 }
+/* NEW Category Borders */
+.task-item[data-category="game"] { border-left-color: var(--cat-game); }
+.task-item[data-category="study"] { border-left-color: var(--cat-study); }
+.task-item[data-category="task_deadline"] { border-left-color: var(--cat-task-deadline); }
 
 /* Completed State */
 .task-item.completed {

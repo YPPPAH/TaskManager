@@ -19,14 +19,13 @@ function loadFromLocalStorage() {
 }
 
 // Date Utilities
-// const today = new Date();
+const today = new Date();
 // Reset time to ensure accurate day comparisons
-// today.setHours(0, 0, 0, 0); 
+today.setHours(0, 0, 0, 0); 
 
-// Initial Mock Data setup (to demonstrate the features immediately)
+// Test
 // function initMockData() {
 //     const tmrw = new Date(today); tmrw.setDate(tmrw.getDate() + 1);
-    
 //     tasks = [
 //         { id: 1, date: today.toISOString(), title: "Math Homework", category: "task", completed: false },
 //         { id: 2, date: today.toISOString(), title: "Study for Biology", category: "exam", completed: false },
@@ -224,8 +223,7 @@ function processOldTasks() {
 // Initialize App
 const hasSavedData = loadFromLocalStorage();
 
-if (!hasSavedData) {
-    initMockData();       
+if (!hasSavedData) {  
     saveToLocalStorage(); 
 }
 
