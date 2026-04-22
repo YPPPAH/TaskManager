@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Organization</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="calendar"></div>
+    <div class="modal-overlay" id="taskModal">
+        <div class="modal">
+            <h3>New Task</h3>
+            <input type="text" id="taskTitle" placeholder="What needs to be done?">
+            <label style="color: var(--text-muted); font-size: 0.85rem; display: block; margin-bottom: 5px;">Optional Deadline:</label>
+            <input type="date" id="taskDeadline">
+            <select id="taskCategory">
+                <option value="default">Default (Grey)</option>
+                <option value="exam">Exam (Red)</option>
+                <option value="task">Assignment/Task (Pink)</option>
+            </select>
+            <button onclick="saveTask()">Add Task</button>
+        </div>
+    </div>
+    <script src="app.js"></script>
+</body>
+</html>

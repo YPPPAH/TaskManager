@@ -1,0 +1,248 @@
+/* Dark Theme Variables */
+:root {
+    --bg-color: #121212;
+    --surface-color: #1e1e1e;
+    --border-color: #333333;
+    --text-main: #ffffff;
+    --text-muted: #a0a0a0;
+    
+    /* Action Colors */
+    --btn-create: darkgreen;
+    --btn-delete: darkred;
+    --btn-complete: #b8860b; 
+    
+    /* Category Colors */
+    --cat-default: grey;
+    --cat-exam: #ff4444; 
+    --cat-task: #ff66b2; 
+    --cat-overdue: #800080; 
+}
+
+body {
+    background-color: var(--bg-color);
+    color: var(--text-main);
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    margin: 0;
+    padding: 20px;
+    height: 100vh;
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Layout Grid */
+#calendar {
+    display: grid;
+    grid-template-columns: 350px repeat(7, minmax(140px, 1fr));
+    grid-template-rows: repeat(2, 400px);
+    gap: 15px;
+    width: 100%;
+    max-width: 1600px;
+}
+
+/* Day Card Styling */
+.day-card {
+    background-color: var(--surface-color);
+    border: 3px solid var(--border-color);
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+    padding: 15px 10px 15px 15px; /* Slight right padding adjustment for scrollbar */
+    overflow: hidden; /* Prevents the whole card from scrolling */
+}
+
+/* Make Today Span 2 Rows */
+.day-card.today {
+    grid-column: 1;
+    grid-row: 1 / span 2;
+    border-color: #555;
+}
+
+.day-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start; /* Aligns the button to the top of the header */
+    margin-bottom: 15px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--border-color);
+    flex-shrink: 0;
+}
+
+.date-number {
+    font-size: 1.5rem;
+    font-weight: bold;
+}
+
+.day-card.today .date-number {
+    font-size: 2.5rem;
+}
+
+.date-label {
+    font-size: 0.9rem;
+    color: var(--text-muted);
+}
+
+/* Buttons */
+.btn-add {
+    background-color: var(--btn-create);
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 28px;
+    height: 28px;
+    font-size: 1.4rem;
+    cursor: pointer;
+    
+    /* Pure Flexbox centering for the icon */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0; /* Remove any padding */
+    margin-top: 4px; /* Adjust this value if you want the button higher or lower relative to the date */
+    
+    transition: opacity 0.2s;
+}
+.btn-add:hover { opacity: 0.8; }
+
+.btn-action {
+    width: 22px; 
+    height: 22px;
+    border-radius: 50%;
+    border: none;
+    cursor: pointer;
+    
+    /* Pure Flexbox centering */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    
+    color: white;
+    font-weight: bold;
+    font-size: 0.75rem;
+    transition: transform 0.1s;
+}
+.btn-action:active { transform: scale(0.9); }
+
+.btn-complete { background-color: var(--btn-complete); }
+.btn-delete { background-color: var(--btn-delete); }
+
+/* Task Item Styling */
+.task-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    flex-grow: 1; /* Takes up remaining space */
+    overflow-y: auto; /* Makes only the tasks scrollable */
+    padding-right: 5px; /* Prevents text from hitting the scrollbar */
+}
+
+/* Scrollbar styling moved to the task list */
+.task-list::-webkit-scrollbar { width: 6px; }
+.task-list::-webkit-scrollbar-thumb { background: #444; border-radius: 4px; }
+
+.task-item {
+    background-color: #252525;
+    padding: 12px;
+    border-radius: 6px;
+    border-left: 5px solid var(--cat-default);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    animation: fadeIn 0.3s ease;
+    flex-shrink: 0; /* Prevents tasks from squishing when list gets full */
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-5px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.task-content {
+    flex-grow: 1;
+    margin-right: 10px;
+    word-break: break-word;
+    font-size: 0.95rem;
+}
+
+.task-actions {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+/* Category Borders */
+.task-item[data-category="exam"] { border-left-color: var(--cat-exam); }
+.task-item[data-category="task"] { border-left-color: var(--cat-task); }
+.task-item[data-category="overdue"] { 
+    border-left-color: var(--cat-overdue); 
+    color: #d8b4e2;
+}
+
+/* Completed State */
+.task-item.completed {
+    opacity: 0.5;
+    text-decoration: line-through;
+    border-left-color: #555;
+}
+
+/* Modal Styling */
+.modal-overlay {
+    display: none;
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0,0,0,0.7);
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+}
+.modal {
+    background: var(--surface-color);
+    padding: 25px;
+    border-radius: 8px;
+    width: 300px;
+    border: 1px solid var(--border-color);
+}
+.modal h3 { margin-top: 0; }
+.modal input, .modal select {
+    width: 100%;
+    padding: 10px;
+    margin-bottom: 15px;
+    background: #121212;
+    border: 1px solid var(--border-color);
+    color: white;
+    border-radius: 4px;
+    box-sizing: border-box;
+}
+.modal button {
+    width: 100%;
+    padding: 10px;
+    background: var(--btn-create);
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: bold;
+}
+/* Deadline Badges */
+.due-badge {
+    font-size: 0.7rem;
+    background-color: #333333;
+    color: #cccccc;
+    padding: 2px 6px;
+    border-radius: 4px;
+    display: inline-block;
+    margin-top: 5px;
+}
+
+.due-warning {
+    font-size: 0.7rem;
+    background-color: darkred;
+    color: white;
+    padding: 2px 6px;
+    border-radius: 4px;
+    display: inline-block;
+    margin-top: 5px;
+    font-weight: bold;
+}
