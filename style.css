@@ -169,10 +169,16 @@ body {
     font-size: 0.95rem;
 }
 
+/* Task Actions Toggle Logic */
 .task-actions {
-    display: flex;
+    display: none; /* HIDDEN BY DEFAULT */
     gap: 8px;
     align-items: center;
+}
+
+/* When the body has this class, show the buttons! */
+body.edit-mode .task-actions {
+    display: flex;
 }
 
 /* Category Borders */
@@ -252,4 +258,72 @@ body {
     display: inline-block;
     margin-top: 5px;
     font-weight: bold;
+}
+/* --- Sidebar Styles (Right Aligned) --- */
+#sidebar {
+    position: fixed;
+    right: -250px; /* Hidden off-screen to the right */
+    top: 0;
+    width: 250px;
+    height: 100vh;
+    background-color: var(--surface-color);
+    border-left: 2px solid var(--border-color); /* Border on the left now */
+    transition: right 0.3s ease; 
+    z-index: 1000;
+    box-sizing: border-box;
+}
+
+#sidebar.open {
+    right: 0; /* Slides in from the right */
+}
+
+.sidebar-content {
+    padding: 20px;
+}
+
+.sidebar-content h2 {
+    margin-top: 0;
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 10px;
+}
+
+.menu-btn {
+    background-color: #333333;
+    color: white;
+    border: 1px solid #555555;
+    padding: 10px;
+    width: 100%;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: background-color 0.2s;
+}
+
+.menu-btn:hover { background-color: #444444; }
+
+/* Right-Center Arrow Button */
+#sidebarToggle {
+    position: absolute;
+    top: 50%;
+    left: -32px; /* Adjusted slightly for the border/width */
+    transform: translateY(-50%);
+    width: 32px;
+    height: 60px;
+    background-color: var(--surface-color);
+    color: var(--text-main);
+    border: 2px solid var(--border-color);
+    border-right: none;
+    border-radius: 8px 0 0 8px;
+    cursor: pointer;
+    
+    /* Center the SVG icon */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+}
+
+#sidebarToggle img {
+    display: block;
+    pointer-events: none; /* Ensures the click registers on the button, not the image */
 }

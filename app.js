@@ -93,7 +93,7 @@ function renderTasksForDate(dateString, containerId, isToday) {
         let actionBtns = '';
         
         // Rule: Complete button (Dark Yellow) only on the actual day
-        if (isToday && !task.completed) {
+        if (!task.completed) {
             actionBtns += `<button class="btn-action btn-complete" onclick="completeTask(${task.id})" title="Complete">✔</button>`;
         }
         // Rule: Delete button (Dark Red) on any task
@@ -187,6 +187,33 @@ window.onclick = function(event) {
     }
 }
 
+// --- UI Toggle Logic ---
+
+function toggleSidebar() {
+    const sidebar = document.getElementById('sidebar');
+    const toggleBtn = document.getElementById('sidebarToggle');
+    
+    sidebar.classList.toggle('open');
+    
+    // Updated arrow logic for the right side
+    if (sidebar.classList.contains('open')) {
+        // When open, show the arrow pointing right (to close)
+        toggleIcon.src = 'arrow_right.svg';
+    } else {
+        // When closed, show the arrow pointing left (to open)
+        toggleIcon.src = 'arrow_left.svg';
+    }
+}
+
+function toggleTaskActions() {
+    // Toggles the class on the body that shows/hides the buttons
+    document.body.classList.toggle('edit-mode');
+    
+    // Optional: Save this preference so it stays open/closed when you refresh
+    const isEditMode = document.body.classList.contains('edit-mode');
+    localStorage.setItem('org_app_edit_mode', isEditMode);
+}
+
 // --- Daily Maintenance ---
 
 function processOldTasks() {
@@ -227,8 +254,15 @@ if (!hasSavedData) {
     saveToLocalStorage(); 
 }
 
+
+
 // Run our automatic cleanup/moving logic every time the page is loaded/refreshed
 processOldTasks();
 
 // Finally, render the calendar
 renderCalendar();
+
+// Add this right before processOldTasks();
+if (localStorage.getItem('org_app_edit_mode') === 'true') {
+    document.body.classList.add('edit-mode');
+}

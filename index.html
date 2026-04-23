@@ -7,6 +7,13 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
+    <div id="sidebar">
+        <div class="sidebar-content">
+            <h2>Settings</h2>
+            <button class="menu-btn" onclick="toggleTaskActions()">Toggle Edit Mode</button>
+        </div>
+        <button id="sidebarToggle" onclick="toggleSidebar()"><img id="toggleIcon" src="arrow_left.svg" alt="toggle" width="25" height="25"></button>
+    </div>
     <div id="calendar"></div>
     <div class="modal-overlay" id="taskModal">
         <div class="modal">
