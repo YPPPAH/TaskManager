@@ -23,6 +23,73 @@ const today = new Date();
 // Reset time to ensure accurate day comparisons
 today.setHours(0, 0, 0, 0); 
 
+let dailyTemplates = JSON.parse(localStorage.getItem('org_daily_templates')) || [];
+
+// --- Daily Template UI Functions ---
+function openDailyModal() {
+    document.getElementById('dailyModal').style.display = 'flex';
+    renderDailyTemplates();
+}
+
+function closeDailyModal() {
+    document.getElementById('dailyModal').style.display = 'none';
+}
+
+function renderDailyTemplates() {
+    const list = document.getElementById('dailyTemplateList');
+    list.innerHTML = dailyTemplates.map((t, index) => `
+        <div style="display:flex; justify-content:space-between; background:#121212; padding:8px; margin-bottom:5px; border-radius:4px;">
+            <span>${t}</span>
+            <span style="color:red; cursor:pointer;" onclick="removeDailyTemplate(${index})">✖</span>
+        </div>
+    `).join('');
+}
+
+function addDailyTemplate() {
+    const val = document.getElementById('newDailyTitle').value;
+    if (val.trim()) {
+        dailyTemplates.push(val.trim());
+        localStorage.setItem('org_daily_templates', JSON.stringify(dailyTemplates));
+        document.getElementById('newDailyTitle').value = '';
+        renderDailyTemplates();
+        checkAndApplyDailyTemplates(); // Apply immediately
+    }
+}
+
+function removeDailyTemplate(index) {
+    dailyTemplates.splice(index, 1);
+    localStorage.setItem('org_daily_templates', JSON.stringify(dailyTemplates));
+    renderDailyTemplates();
+}
+
+// --- The Core "Auto-Create" Logic ---
+function checkAndApplyDailyTemplates() {
+    const todayStr = today.toISOString();
+    let updated = false;
+
+    dailyTemplates.forEach(templateTitle => {
+        // Check if a task with this name already exists for today
+        const exists = tasks.some(t => t.date === todayStr && t.title === templateTitle);
+        
+        if (!exists) {
+            tasks.push({
+                id: Date.now() + Math.random(), // Unique ID
+                date: todayStr,
+                title: templateTitle,
+                category: 'default',
+                completed: false,
+                deadline: null
+            });
+            updated = true;
+        }
+    });
+
+    if (updated) {
+        saveToLocalStorage();
+        renderCalendar();
+    }
+}
+
 // Test
 // function initMockData() {
 //     const tmrw = new Date(today); tmrw.setDate(tmrw.getDate() + 1);
@@ -254,15 +321,16 @@ if (!hasSavedData) {
     saveToLocalStorage(); 
 }
 
-
+// Check for routine tasks every time the app opens
+checkAndApplyDailyTemplates();
 
 // Run our automatic cleanup/moving logic every time the page is loaded/refreshed
 processOldTasks();
 
-// Finally, render the calendar
-renderCalendar();
-
-// Add this right before processOldTasks();
+// Check if we should start in edit mode based on saved preference
 if (localStorage.getItem('org_app_edit_mode') === 'true') {
     document.body.classList.add('edit-mode');
 }
+
+// Finally, render the calendar
+renderCalendar();

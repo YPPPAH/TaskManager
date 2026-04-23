@@ -11,6 +11,7 @@
         <div class="sidebar-content">
             <h2>Settings</h2>
             <button class="menu-btn" onclick="toggleTaskActions()">Toggle Edit Mode</button>
+            <button class="menu-btn" style="margin-top: 10px;" onclick="openDailyModal()">Manage Daily Tasks</button>
         </div>
         <button id="sidebarToggle" onclick="toggleSidebar()"><img id="toggleIcon" src="arrow_left.svg" alt="toggle" width="25" height="25"></button>
     </div>
@@ -30,6 +31,17 @@
                 <option value="game">Game (Orange)</option>
             </select>
             <button onclick="saveTask()">Add Task</button>
+        </div>
+    </div>
+    <div class="modal-overlay" id="dailyModal">
+        <div class="modal">
+            <h3>Daily Templates</h3>
+            <p style="font-size: 0.8rem; color: var(--text-muted);">Tasks added here will be created automatically every day.</p>
+            <div id="dailyTemplateList" style="margin-bottom: 15px; max-height: 200px; overflow-y: auto;"></div>
+            
+            <input type="text" id="newDailyTitle" placeholder="Routine task name...">
+            <button onclick="addDailyTemplate()" style="background: var(--btn-create); margin-bottom: 10px;">Add to Routine</button>
+            <button onclick="closeDailyModal()" style="background: #444;">Close</button>
         </div>
     </div>
     <script src="app.js"></script>
