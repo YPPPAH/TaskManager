@@ -314,6 +314,35 @@ function processOldTasks() {
     saveToLocalStorage();
 }
 
+// --- Ultra-Optimized Auto-Refresh Logic ---
+function startMidnightListener() {
+    const now = new Date();
+    
+    // Create a date object for exactly 12:00:00 AM tomorrow
+    const tomorrow = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 0, 0, 0, 0);
+    
+    // Calculate the exact milliseconds remaining until midnight
+    const timeUntilMidnight = tomorrow.getTime() - now.getTime();
+    
+    console.log(`Calendar will refresh in ${Math.round(timeUntilMidnight / 1000 / 60)} minutes.`);
+
+    // Set a single timer to trigger exactly at midnight
+    setTimeout(() => {
+        console.log("Midnight passed! Refreshing calendar automatically...");
+        
+        today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        processOldTasks();
+        checkAndApplyDailyTemplates();
+        renderCalendar();
+        
+        // Restart the listener for the next day!
+        startMidnightListener(); 
+
+    }, timeUntilMidnight);
+}
+
 // Initialize App
 const hasSavedData = loadFromLocalStorage();
 
@@ -326,6 +355,9 @@ checkAndApplyDailyTemplates();
 
 // Run our automatic cleanup/moving logic every time the page is loaded/refreshed
 processOldTasks();
+
+// START THE BACKGROUND CLOCK
+startMidnightListener();
 
 // Check if we should start in edit mode based on saved preference
 if (localStorage.getItem('org_app_edit_mode') === 'true') {
