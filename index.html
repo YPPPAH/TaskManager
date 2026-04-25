@@ -12,6 +12,12 @@
             <h2>Settings</h2>
             <button class="menu-btn" onclick="toggleTaskActions()">Toggle Edit Mode</button>
             <button class="menu-btn" style="margin-top: 10px;" onclick="openDailyModal()">Manage Daily Tasks</button>
+            <div style="margin-top: 20px; border-top: 1px solid var(--border-color); padding-top: 15px;">
+            <label style="font-size: 0.9rem; color: var(--text-muted);">Extra Days: <span id="daysValue">14</span></label>
+            <input type="range" id="daysSlider" min="7" max="14" value="14" step="1" 
+                style="width: 100%; margin-top: 10px; cursor: pointer;"
+                oninput="updateDaysLimit(this.value)">
+    </div>
         </div>
         <button id="sidebarToggle" onclick="toggleSidebar()"><img id="toggleIcon" src="arrow_left.svg" alt="toggle" width="25" height="25"></button>
     </div>

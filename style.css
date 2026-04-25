@@ -19,6 +19,7 @@
     --cat-game: #ffa500; /* Orange */
     --cat-study: #007bff; /* Blue */
     --cat-task-deadline: #9370db; /* Medium Purple */
+    --cat-daily: #006400; /* Dark Green */
 }
 
 body {
@@ -184,14 +185,11 @@ body.edit-mode .task-actions {
 /* Category Borders */
 .task-item[data-category="exam"] { border-left-color: var(--cat-exam); }
 .task-item[data-category="task"] { border-left-color: var(--cat-task); }
-.task-item[data-category="overdue"] { 
-    border-left-color: var(--cat-overdue); 
-    color: #d8b4e2;
-}
-/* NEW Category Borders */
+.task-item[data-category="overdue"] { border-left-color: var(--cat-overdue); color: #d8b4e2;}
 .task-item[data-category="game"] { border-left-color: var(--cat-game); }
 .task-item[data-category="study"] { border-left-color: var(--cat-study); }
 .task-item[data-category="task_deadline"] { border-left-color: var(--cat-task-deadline); }
+.task-item[data-category="daily"] { border-left-color: var(--cat-daily); }
 
 /* Completed State */
 .task-item.completed {

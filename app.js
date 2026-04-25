@@ -1,6 +1,7 @@
 // State Management
 let tasks = [];
 let selectedDateForNewTask = null;
+let extraDaysLimit = parseInt(localStorage.getItem('org_days_limit')) || 14;
 
 // --- Local Storage Utilities ---
 function saveToLocalStorage() {
@@ -76,7 +77,7 @@ function checkAndApplyDailyTemplates() {
                 id: Date.now() + Math.random(), // Unique ID
                 date: todayStr,
                 title: templateTitle,
-                category: 'default',
+                category: 'daily',
                 completed: false,
                 deadline: null
             });
@@ -108,7 +109,7 @@ function renderCalendar() {
     calendarEl.innerHTML = '';
 
     // Render Today + next 14 days (15 days total)
-    for (let i = 0; i < 15; i++) {
+    for (let i = 0; i < (extraDaysLimit + 1); i++) {
         const currentDate = new Date(today);
         currentDate.setDate(today.getDate() + i);
         
@@ -314,8 +315,18 @@ function processOldTasks() {
     saveToLocalStorage();
 }
 
+function updateDaysLimit(value) {
+    extraDaysLimit = parseInt(value);
+    document.getElementById('daysValue').innerText = value;
+    localStorage.setItem('org_days_limit', value);
+    renderCalendar(); // Re-draw the calendar immediately
+}
+
 // Initialize App
 const hasSavedData = loadFromLocalStorage();
+// Inside your init block at the bottom
+document.getElementById('daysSlider').value = extraDaysLimit;
+document.getElementById('daysValue').innerText = extraDaysLimit;
 
 if (!hasSavedData) {  
     saveToLocalStorage(); 
