@@ -19,7 +19,7 @@ function loadFromLocalStorage() {
 }
 
 // Date Utilities
-const today = new Date();
+let today = new Date();
 // Reset time to ensure accurate day comparisons
 today.setHours(0, 0, 0, 0); 
 
@@ -333,8 +333,8 @@ function startMidnightListener() {
         today = new Date();
         today.setHours(0, 0, 0, 0);
 
-        processOldTasks();
         checkAndApplyDailyTemplates();
+        processOldTasks();
         renderCalendar();
         
         // Restart the listener for the next day!
