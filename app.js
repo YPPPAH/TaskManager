@@ -1,31 +1,166 @@
-// State Management
+// --- State Management ---
 let tasks = [];
+let dailyTemplates = JSON.parse(localStorage.getItem('org_daily_templates')) || [];
 let selectedDateForNewTask = null;
+let editingTaskId = null;
+let currentView = localStorage.getItem('org_app_view') || 'calendar';
+let today = new Date();
+today.setHours(0, 0, 0, 0);
 
 // --- Local Storage Utilities ---
 function saveToLocalStorage() {
-    // Converts the tasks array to a text string and saves it
     localStorage.setItem('org_app_tasks', JSON.stringify(tasks));
 }
 
 function loadFromLocalStorage() {
-    // Tries to get the saved string
     const savedData = localStorage.getItem('org_app_tasks');
     if (savedData) {
-        tasks = JSON.parse(savedData); // Convert it back to an array
-        return true; // We found data!
+        tasks = JSON.parse(savedData);
+        return true;
     }
-    return false; // No data found
+    return false;
 }
 
-// Date Utilities
-let today = new Date();
-// Reset time to ensure accurate day comparisons
-today.setHours(0, 0, 0, 0); 
+// --- Sidebar & View Toggles ---
+function toggleSidebar() {
+    const sidebar = document.getElementById('sidebar');
+    const toggleIcon = document.getElementById('toggleIcon');
+    sidebar.classList.toggle('open');
+    
+    if (sidebar.classList.contains('open')) {
+        toggleIcon.src = 'arrow_right.svg'; // Ensure you have these SVGs
+    } else {
+        toggleIcon.src = 'arrow_left.svg';
+    }
+}
 
-let dailyTemplates = JSON.parse(localStorage.getItem('org_daily_templates')) || [];
+// --- View Logic ---
 
-// --- Daily Template UI Functions ---
+/**
+ * Applies the current view state to the UI
+ */
+function applyView() {
+    const cal = document.getElementById('calendar');
+    const list = document.getElementById('list-view');
+    const btn = document.getElementById('viewToggleBtn');
+
+    if (currentView === 'list') {
+        cal.style.display = 'none';
+        list.style.display = 'block';
+        if (btn) btn.innerText = 'Switch to Calendar View';
+        renderListView();
+    } else {
+        cal.style.display = 'grid';
+        list.style.display = 'none';
+        if (btn) btn.innerText = 'Switch to List View';
+        renderCalendar();
+    }
+}
+
+/**
+ * Toggles and saves the view preference
+ */
+function toggleView() {
+    currentView = (currentView === 'calendar') ? 'list' : 'calendar';
+    
+    // Save the preference to localStorage
+    localStorage.setItem('org_app_view', currentView);
+    
+    applyView();
+}
+
+
+function toggleTaskActions() {
+    document.body.classList.toggle('edit-mode');
+    localStorage.setItem('org_app_edit_mode', document.body.classList.contains('edit-mode'));
+}
+
+// --- Task Modal (Add/Edit) ---
+function openModal(dateStr = null, taskId = null) {
+    editingTaskId = taskId;
+    const modalTitle = document.getElementById('modalTitle');
+    const saveBtn = document.getElementById('saveTaskBtn');
+    const dateInput = document.getElementById('taskDate');
+    
+    // Set a default date if none provided (for Sidebar Quick Add)
+    if (!dateStr && !taskId) {
+        dateStr = new Date().toISOString().split('T')[0];
+    }
+
+    if (taskId) {
+        const task = tasks.find(t => t.id === taskId);
+        modalTitle.innerText = "Edit Task";
+        saveBtn.innerText = "Update Task";
+        document.getElementById('taskTitle').value = task.title;
+        document.getElementById('taskCategory').value = task.category;
+        document.getElementById('taskDeadline').value = task.deadline || '';
+        // Set the date input to the task's existing date
+        dateInput.value = new Date(task.date).toISOString().split('T')[0];
+        updateCategoryPreview(task.category);
+    } else {
+        editingTaskId = null;
+        modalTitle.innerText = "New Task";
+        saveBtn.innerText = "Add Task";
+        document.getElementById('taskTitle').value = '';
+        document.getElementById('taskCategory').value = 'default';
+        document.getElementById('taskDeadline').value = '';
+        // Set the date input to the selected date
+        dateInput.value = new Date(dateStr).toISOString().split('T')[0];
+        updateCategoryPreview('default');
+    }
+    document.getElementById('taskModal').style.display = 'flex';
+}
+
+function closeModal() {
+    document.getElementById('taskModal').style.display = 'none';
+}
+
+function saveTask() {
+    const title = document.getElementById('taskTitle').value;
+    const category = document.getElementById('taskCategory').value;
+    const deadline = document.getElementById('taskDeadline').value;
+    const taskDate = document.getElementById('taskDate').value; // Read from the new input
+
+    if (!title.trim() || !taskDate) return alert("Please enter a title and a valid date.");
+
+    // Convert input date to ISO format consistent with app state
+    const formattedDate = new Date(taskDate).toISOString();
+
+    if (editingTaskId) {
+        const index = tasks.findIndex(t => t.id === editingTaskId);
+        tasks[index] = { ...tasks[index], title, category, deadline, date: formattedDate };
+    } else {
+        tasks.push({
+            id: Date.now(),
+            date: formattedDate,
+            title,
+            category,
+            deadline: deadline || null,
+            completed: false
+        });
+    }
+
+    closeModal();
+    saveToLocalStorage();
+    applyView(); // Re-render whichever view is active
+}
+
+function deleteTask(id) {
+    tasks = tasks.filter(t => t.id !== id);
+    saveToLocalStorage();
+    currentView === 'calendar' ? renderCalendar() : renderListView();
+}
+
+function completeTask(id) {
+    const task = tasks.find(t => t.id === id);
+    if (task) {
+        task.completed = !task.completed; // Toggle state
+        saveToLocalStorage();
+        currentView === 'calendar' ? renderCalendar() : renderListView();
+    }
+}
+
+// --- Daily Templates ---
 function openDailyModal() {
     document.getElementById('dailyModal').style.display = 'flex';
     renderDailyTemplates();
@@ -38,21 +173,22 @@ function closeDailyModal() {
 function renderDailyTemplates() {
     const list = document.getElementById('dailyTemplateList');
     list.innerHTML = dailyTemplates.map((t, index) => `
-        <div style="display:flex; justify-content:space-between; background:#121212; padding:8px; margin-bottom:5px; border-radius:4px;">
-            <span>${t}</span>
+        <div style="display:flex; justify-content:space-between; background:#121212; padding:8px; margin-bottom:5px; border-radius:4px; border-left: 4px solid var(--cat-${t.category})">
+            <span>${t.title}</span>
             <span style="color:red; cursor:pointer;" onclick="removeDailyTemplate(${index})">✖</span>
         </div>
     `).join('');
 }
 
 function addDailyTemplate() {
-    const val = document.getElementById('newDailyTitle').value;
-    if (val.trim()) {
-        dailyTemplates.push(val.trim());
+    const title = document.getElementById('newDailyTitle').value;
+    const category = document.getElementById('newDailyCategory').value;
+    if (title.trim()) {
+        dailyTemplates.push({ title: title.trim(), category });
         localStorage.setItem('org_daily_templates', JSON.stringify(dailyTemplates));
         document.getElementById('newDailyTitle').value = '';
         renderDailyTemplates();
-        checkAndApplyDailyTemplates(); // Apply immediately
+        checkAndApplyDailyTemplates();
     }
 }
 
@@ -62,86 +198,111 @@ function removeDailyTemplate(index) {
     renderDailyTemplates();
 }
 
-// --- The Core "Auto-Create" Logic ---
 function checkAndApplyDailyTemplates() {
     const todayStr = today.toISOString();
     let updated = false;
-
-    dailyTemplates.forEach(templateTitle => {
-        // Check if a task with this name already exists for today
-        const exists = tasks.some(t => t.date === todayStr && t.title === templateTitle);
-        
+    dailyTemplates.forEach(temp => {
+        const exists = tasks.some(t => t.date === todayStr && t.title === temp.title);
         if (!exists) {
             tasks.push({
-                id: Date.now() + Math.random(), // Unique ID
+                id: Date.now() + Math.random(),
                 date: todayStr,
-                title: templateTitle,
-                category: 'default',
+                title: temp.title,
+                category: temp.category,
                 completed: false,
                 deadline: null
             });
             updated = true;
         }
     });
-
-    if (updated) {
-        saveToLocalStorage();
-        renderCalendar();
-    }
+    if (updated) { saveToLocalStorage(); renderCalendar(); }
 }
 
-// Test
-// function initMockData() {
-//     const tmrw = new Date(today); tmrw.setDate(tmrw.getDate() + 1);
-//     tasks = [
-//         { id: 1, date: today.toISOString(), title: "Math Homework", category: "task", completed: false },
-//         { id: 2, date: today.toISOString(), title: "Study for Biology", category: "exam", completed: false },
-//         // Example of a task that wasn't finished yesterday, moved to today as overdue
-//         { id: 3, date: today.toISOString(), title: "Clean Desk (Missed)", category: "overdue", completed: false }, 
-//         { id: 4, date: tmrw.toISOString(), title: "Doctor Appointment", category: "default", completed: false }
-//     ];
-// }
+// --- Maintenance & Overdue ---
+function processOldTasks() {
+    const todayTime = today.getTime();
+    tasks = tasks.filter(task => {
+        const taskDate = new Date(task.date);
+        taskDate.setHours(0,0,0,0);
+        return !(taskDate.getTime() < todayTime && task.completed);
+    });
 
-// Render the Grid
+    tasks.forEach(task => {
+        const taskDate = new Date(task.date);
+        taskDate.setHours(0,0,0,0);
+        if (taskDate.getTime() < todayTime && !task.completed) {
+            const diff = todayTime - taskDate.getTime();
+            task.daysOverdue = Math.floor(diff / (1000 * 60 * 60 * 24));
+            task.category = 'overdue';
+            task.date = today.toISOString();
+        }
+    });
+    saveToLocalStorage();
+}
+
+// --- Rendering Logic ---
 function renderCalendar() {
     const calendarEl = document.getElementById('calendar');
+    if (!calendarEl) return;
     calendarEl.innerHTML = '';
 
-    // Render Today + next 14 days (15 days total)
     for (let i = 0; i < 15; i++) {
         const currentDate = new Date(today);
         currentDate.setDate(today.getDate() + i);
-        
         const isToday = i === 0;
         const dateString = currentDate.toISOString();
         
-        // Create Card
         const card = document.createElement('div');
         card.className = `day-card ${isToday ? 'today' : ''}`;
         
-        // Header
-        const dayName = currentDate.toLocaleDateString('en-US', { weekday: 'short' });
-        const dayNum = currentDate.getDate();
-        const monthName = currentDate.toLocaleDateString('en-US', { month: 'short' });
-
         card.innerHTML = `
             <div class="day-header">
                 <div>
-                    <span class="date-number">${dayNum}</span>
-                    <span class="date-label">${dayName}, ${monthName}</span>
+                    <span class="date-number">${currentDate.getDate()}</span>
+                    <span class="date-label">${currentDate.toLocaleDateString('en-US', { weekday: 'short', month: 'short' })}</span>
                 </div>
                 <button class="btn-add" onclick="openModal('${dateString}')">+</button>
             </div>
             <div class="task-list" id="list-${i}"></div>
         `;
-        
         calendarEl.appendChild(card);
-        renderTasksForDate(dateString, `list-${i}`, isToday);
+        renderTasksForDate(dateString, `list-${i}`);
     }
 }
 
-// Render Tasks inside a specific day
-function renderTasksForDate(dateString, containerId, isToday) {
+/**
+ * Enhanced List View with spacing classes
+ */
+function renderListView() {
+    const container = document.getElementById('list-view');
+    if (!container) return;
+    
+    container.innerHTML = '<h2>Full Task List</h2><div id="list-content"></div>';
+    const content = document.getElementById('list-content');
+
+    // Get all unique dates from tasks and sort them
+    const allUniqueDates = [...new Set(tasks.map(t => t.date))].sort();
+    
+    allUniqueDates.forEach((dateStr, idx) => {
+        const dateObj = new Date(dateStr);
+        const section = document.createElement('div');
+        section.className = 'list-section';
+        
+        // Use the 'list-group-container' class for the task spacing
+        section.innerHTML = `
+            <div class="list-section-header">
+                ${dateObj.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
+            </div>
+            <div id="list-group-${idx}" class="list-group-container"></div>
+        `;
+        content.appendChild(section);
+        
+        // Render tasks into the newly created group
+        renderTasksForDate(dateStr, `list-group-${idx}`);
+    });
+}
+
+function renderTasksForDate(dateString, containerId) {
     const container = document.getElementById(containerId);
     const targetDate = new Date(dateString).getTime();
 
@@ -155,214 +316,54 @@ function renderTasksForDate(dateString, containerId, isToday) {
         const taskEl = document.createElement('div');
         taskEl.className = `task-item ${task.completed ? 'completed' : ''}`;
         taskEl.setAttribute('data-category', task.category);
-
-        // Build Action Buttons
-        let actionBtns = '';
         
-        // Rule: Complete button (Dark Yellow) only on the actual day
-        if (!task.completed) {
-            actionBtns += `<button class="btn-action btn-complete" onclick="completeTask(${task.id})" title="Complete">✔</button>`;
-        }
-        // Rule: Delete button (Dark Red) on any task
-        actionBtns += `<button class="btn-action btn-delete" onclick="deleteTask(${task.id})" title="Delete">✖</button>`;
-        // Build Deadline Badge
-        let deadlineHtml = '';
-        if (task.deadline) {
-            const dDate = new Date(task.deadline);
-            // Fix timezone offset for accurate day display
-            dDate.setMinutes(dDate.getMinutes() + dDate.getTimezoneOffset()); 
-            
-            const dStr = dDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-            
-            // If the calendar day we are rendering is >= the deadline, make it red!
-            const isWarning = targetDate >= dDate.getTime(); 
-            const badgeClass = isWarning ? 'due-warning' : 'due-badge';
-            
-            deadlineHtml = `<div class="${badgeClass}">Due: ${dStr}</div>`;
-        }
+        // Clicking the card opens Edit (but NOT when clicking checkbox or delete)
+        taskEl.onclick = (e) => {
+            if (e.target.type !== 'checkbox' && !e.target.classList.contains('btn-delete')) {
+                openModal(task.date, task.id);
+            }
+        };
+
+        const overdueLabel = task.daysOverdue ? `<span class="overdue-counter">${task.daysOverdue}d late</span>` : '';
 
         taskEl.innerHTML = `
-            <div class="task-content">
-                <div style="font-weight: bold;">${task.title}</div>
-                ${deadlineHtml} </div>
-            <div class="task-actions">${actionBtns}</div>
+            <div style="display:flex; align-items:center;">
+                <input type="checkbox" class="task-checkbox" ${task.completed ? 'checked' : ''} 
+                       onclick="event.stopPropagation(); completeTask(${task.id})">
+                <div class="task-content">
+                    <div style="font-weight: bold;">${task.title} ${overdueLabel}</div>
+                    ${task.deadline ? `<div class="due-badge">Due: ${new Date(task.deadline).toLocaleDateString()}</div>` : ''}
+                </div>
+            </div>
+            <div class="task-actions">
+                <button class="btn-action btn-delete" onclick="event.stopPropagation(); deleteTask(${task.id})">✖</button>
+            </div>
         `;
-        
         container.appendChild(taskEl);
     });
 }
 
-// --- Task Logic ---
-
-function openModal(dateStr) {
-    selectedDateForNewTask = dateStr;
-    document.getElementById('taskTitle').value = '';
-    document.getElementById('taskCategory').value = 'default';
-    document.getElementById('taskDeadline').value = '';
-    document.getElementById('taskModal').style.display = 'flex';
-    document.getElementById('taskTitle').focus();
+function updateCategoryPreview(val) {
+    const colors = {
+        default: 'grey', exam: '#ff4444', task: '#ff66b2',
+        overdue: '#800080', game: '#ffa500', study: '#007bff',
+        task_deadline: '#9370db'
+    };
+    const preview = document.getElementById('categoryPreview');
+    if (preview) preview.style.backgroundColor = colors[val] || 'grey';
 }
 
-function closeModal() {
-    document.getElementById('taskModal').style.display = 'none';
-}
-
-function saveTask() {
-    const title = document.getElementById('taskTitle').value;
-    const category = document.getElementById('taskCategory').value;
-    const deadline = document.getElementById('taskDeadline').value; // <-- ADD THIS
-    
-    if (!title.trim()) {
-        alert("Please enter a task title.");
-        return;
-    }
-
-    tasks.push({
-        id: Date.now(), 
-        date: selectedDateForNewTask, // The day you plan to WORK on it
-        deadline: deadline || null,   // <-- ADD THIS (The actual due date)
-        title: title,
-        category: category,
-        completed: false
-    });
-
-    closeModal();
-    saveToLocalStorage(); 
-    renderCalendar();
-}
-
-function deleteTask(id) {
-    tasks = tasks.filter(t => t.id !== id);
-    saveToLocalStorage(); // <--- ADD THIS
-    renderCalendar();
-}
-
-function completeTask(id) {
-    const task = tasks.find(t => t.id === id);
-    if (task) {
-        task.completed = true;
-        saveToLocalStorage(); // <--- ADD THIS
-        renderCalendar();
-    }
-}
-
-// Close modal if clicking outside
-window.onclick = function(event) {
-    const modal = document.getElementById('taskModal');
-    if (event.target == modal) {
+// --- Initialization ---
+window.onclick = (event) => {
+    if (event.target.classList.contains('modal-overlay')) {
         closeModal();
+        closeDailyModal();
     }
-}
+};
 
-// --- UI Toggle Logic ---
-
-function toggleSidebar() {
-    const sidebar = document.getElementById('sidebar');
-    const toggleBtn = document.getElementById('sidebarToggle');
-    
-    sidebar.classList.toggle('open');
-    
-    // Updated arrow logic for the right side
-    if (sidebar.classList.contains('open')) {
-        // When open, show the arrow pointing right (to close)
-        toggleIcon.src = 'arrow_right.svg';
-    } else {
-        // When closed, show the arrow pointing left (to open)
-        toggleIcon.src = 'arrow_left.svg';
-    }
-}
-
-function toggleTaskActions() {
-    // Toggles the class on the body that shows/hides the buttons
-    document.body.classList.toggle('edit-mode');
-    
-    // Optional: Save this preference so it stays open/closed when you refresh
-    const isEditMode = document.body.classList.contains('edit-mode');
-    localStorage.setItem('org_app_edit_mode', isEditMode);
-}
-
-// --- Daily Maintenance ---
-
-function processOldTasks() {
-    const todayTime = today.getTime(); // 'today' is already set to midnight in your Date Utilities
-    
-    // 1. Remove old completed tasks
-    tasks = tasks.filter(task => {
-        const taskDate = new Date(task.date);
-        taskDate.setHours(0, 0, 0, 0);
-        
-        // If the date is strictly before today AND it's completed, filter it out (delete)
-        if (taskDate.getTime() < todayTime && task.completed) {
-            return false; 
-        }
-        return true; 
-    });
-
-    // 2. Move old uncompleted tasks to today and mark as overdue
-    tasks.forEach(task => {
-        const taskDate = new Date(task.date);
-        taskDate.setHours(0, 0, 0, 0);
-        
-        // If the date is before today AND it's not completed
-        if (taskDate.getTime() < todayTime && !task.completed) {
-            task.category = 'overdue';
-            task.date = today.toISOString(); // Move to today's list
-        }
-    });
-
-    // Save the cleaned up state to LocalStorage
-    saveToLocalStorage();
-}
-
-// --- Ultra-Optimized Auto-Refresh Logic ---
-function startMidnightListener() {
-    const now = new Date();
-    
-    // Create a date object for exactly 12:00:00 AM tomorrow
-    const tomorrow = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 0, 0, 0, 0);
-    
-    // Calculate the exact milliseconds remaining until midnight
-    const timeUntilMidnight = tomorrow.getTime() - now.getTime();
-    
-    console.log(`Calendar will refresh in ${Math.round(timeUntilMidnight / 1000 / 60)} minutes.`);
-
-    // Set a single timer to trigger exactly at midnight
-    setTimeout(() => {
-        console.log("Midnight passed! Refreshing calendar automatically...");
-        
-        today = new Date();
-        today.setHours(0, 0, 0, 0);
-
-        checkAndApplyDailyTemplates();
-        processOldTasks();
-        renderCalendar();
-        
-        // Restart the listener for the next day!
-        startMidnightListener(); 
-
-    }, timeUntilMidnight);
-}
-
-// Initialize App
-const hasSavedData = loadFromLocalStorage();
-
-if (!hasSavedData) {  
-    saveToLocalStorage(); 
-}
-
-// Check for routine tasks every time the app opens
-checkAndApplyDailyTemplates();
-
-// Run our automatic cleanup/moving logic every time the page is loaded/refreshed
+loadFromLocalStorage();
 processOldTasks();
-
-// START THE BACKGROUND CLOCK
-startMidnightListener();
-
-// Check if we should start in edit mode based on saved preference
-if (localStorage.getItem('org_app_edit_mode') === 'true') {
-    document.body.classList.add('edit-mode');
-}
-
-// Finally, render the calendar
+checkAndApplyDailyTemplates();
+if (localStorage.getItem('org_app_edit_mode') === 'true') document.body.classList.add('edit-mode');
+applyView();
 renderCalendar();
