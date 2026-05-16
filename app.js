@@ -7,11 +7,17 @@ let currentView = localStorage.getItem('org_app_view') || 'calendar';
 let today = new Date();
 today.setHours(0, 0, 0, 0);
 
-// --- Local Storage Utilities ---
+/**
+ * Saves the current tasks array to localStorage in JSON format under the key 'org_app_tasks'
+ */
 function saveToLocalStorage() {
     localStorage.setItem('org_app_tasks', JSON.stringify(tasks));
 }
 
+/**
+ * Loads tasks from localStorage, parsing the JSON string back into an array and assigning it to the global 'tasks' variable.
+ * @returns {boolean} - Returns true if tasks were successfully loaded, false if no data was found in localStorage.
+ */
 function loadFromLocalStorage() {
     const savedData = localStorage.getItem('org_app_tasks');
     if (savedData) {
@@ -21,7 +27,9 @@ function loadFromLocalStorage() {
     return false;
 }
 
-// --- Sidebar & View Toggles ---
+/**
+ * Toggles the visibility of the sidebar by adding or removing the 'open' class, and updates the toggle icon accordingly.
+ */
 function toggleSidebar() {
     const sidebar = document.getElementById('sidebar');
     const toggleIcon = document.getElementById('toggleIcon');
@@ -33,8 +41,6 @@ function toggleSidebar() {
         toggleIcon.src = 'arrow_left.svg';
     }
 }
-
-// --- View Logic ---
 
 /**
  * Applies the current view state to the UI
@@ -62,29 +68,43 @@ function applyView() {
  */
 function toggleView() {
     currentView = (currentView === 'calendar') ? 'list' : 'calendar';
-    
     // Save the preference to localStorage
     localStorage.setItem('org_app_view', currentView);
-    
     applyView();
 }
 
-
+/**
+ * Toggles edit mode for task actions and saves the preference
+ */
 function toggleTaskActions() {
     document.body.classList.toggle('edit-mode');
     localStorage.setItem('org_app_edit_mode', document.body.classList.contains('edit-mode'));
 }
 
-// --- Task Modal (Add/Edit) ---
+/**
+ * Opens the task modal for creating a new task or editing an existing one.
+ * If a date string is provided, it pre-fills the date input. If a task ID is provided, it loads the task details for editing.
+ * @param {string|null} dateStr - The date string to pre-fill the date input (optional)
+ * @param {number|null} taskId - The ID of the task to edit (optional)
+ */
 function openModal(dateStr = null, taskId = null) {
     editingTaskId = taskId;
     const modalTitle = document.getElementById('modalTitle');
     const saveBtn = document.getElementById('saveTaskBtn');
     const dateInput = document.getElementById('taskDate');
     
+    // --- Helper to format Date to local YYYY-MM-DD ---
+    const getLocalYYYYMMDD = (dateVal) => {
+        const d = new Date(dateVal);
+        const year = d.getFullYear();
+        const month = String(d.getMonth() + 1).padStart(2, '0');
+        const day = String(d.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+    };
+
     // Set a default date if none provided (for Sidebar Quick Add)
     if (!dateStr && !taskId) {
-        dateStr = new Date().toISOString().split('T')[0];
+        dateStr = new Date(); 
     }
 
     if (taskId) {
@@ -94,8 +114,9 @@ function openModal(dateStr = null, taskId = null) {
         document.getElementById('taskTitle').value = task.title;
         document.getElementById('taskCategory').value = task.category;
         document.getElementById('taskDeadline').value = task.deadline || '';
-        // Set the date input to the task's existing date
-        dateInput.value = new Date(task.date).toISOString().split('T')[0];
+        
+        // Use local time instead of UTC string splitting
+        dateInput.value = getLocalYYYYMMDD(task.date);
         updateCategoryPreview(task.category);
     } else {
         editingTaskId = null;
@@ -104,22 +125,30 @@ function openModal(dateStr = null, taskId = null) {
         document.getElementById('taskTitle').value = '';
         document.getElementById('taskCategory').value = 'default';
         document.getElementById('taskDeadline').value = '';
-        // Set the date input to the selected date
-        dateInput.value = new Date(dateStr).toISOString().split('T')[0];
+        
+        // Use local time instead of UTC string splitting
+        dateInput.value = getLocalYYYYMMDD(dateStr);
         updateCategoryPreview('default');
     }
+    
     document.getElementById('taskModal').style.display = 'flex';
 }
 
+/**
+ * Closes the task modal and resets the editing state
+ */
 function closeModal() {
     document.getElementById('taskModal').style.display = 'none';
 }
 
+/**
+ * Saves a new task or updates an existing one based on the modal state
+ */
 function saveTask() {
     const title = document.getElementById('taskTitle').value;
     const category = document.getElementById('taskCategory').value;
     const deadline = document.getElementById('taskDeadline').value;
-    const taskDate = document.getElementById('taskDate').value; // Read from the new input
+    const taskDate = document.getElementById('taskDate').value;
 
     if (!title.trim() || !taskDate) return alert("Please enter a title and a valid date.");
 
@@ -145,12 +174,20 @@ function saveTask() {
     applyView(); // Re-render whichever view is active
 }
 
+/**
+ * Deletes a task by ID and updates the view
+ * @param {number} id - The unique identifier of the task to delete
+ */
 function deleteTask(id) {
     tasks = tasks.filter(t => t.id !== id);
     saveToLocalStorage();
     currentView === 'calendar' ? renderCalendar() : renderListView();
 }
 
+/**
+ * Toggles the completion status of a task and updates the view
+ * @param {number} id - The unique identifier of the task to toggle
+ */
 function completeTask(id) {
     const task = tasks.find(t => t.id === id);
     if (task) {
@@ -170,6 +207,9 @@ function closeDailyModal() {
     document.getElementById('dailyModal').style.display = 'none';
 }
 
+/**
+ * Renders the list of daily templates in the modal with category color indicators and delete options
+ */
 function renderDailyTemplates() {
     const list = document.getElementById('dailyTemplateList');
     list.innerHTML = dailyTemplates.map((t, index) => `
@@ -180,6 +220,9 @@ function renderDailyTemplates() {
     `).join('');
 }
 
+/**
+ * Adds a new daily template based on user input, saves it to localStorage, and applies it to today's tasks
+ */
 function addDailyTemplate() {
     const title = document.getElementById('newDailyTitle').value;
     const category = document.getElementById('newDailyCategory').value;
@@ -192,12 +235,19 @@ function addDailyTemplate() {
     }
 }
 
+/**
+ * Removes a daily template by index, updates localStorage, and re-renders the template list
+ * @param {number} index - The index of the template to remove from the dailyTemplates array
+ */
 function removeDailyTemplate(index) {
     dailyTemplates.splice(index, 1);
     localStorage.setItem('org_daily_templates', JSON.stringify(dailyTemplates));
     renderDailyTemplates();
 }
 
+/**
+ * Checks if today's date has the daily templates applied, and if not, applies them to today's tasks
+ */
 function checkAndApplyDailyTemplates() {
     const todayStr = today.toISOString();
     let updated = false;
@@ -218,7 +268,10 @@ function checkAndApplyDailyTemplates() {
     if (updated) { saveToLocalStorage(); renderCalendar(); }
 }
 
-// --- Maintenance & Overdue ---
+/**
+ * Processes old tasks by removing completed ones that are past due and marking 
+ * overdue tasks with the number of days overdue and changing their category
+ */
 function processOldTasks() {
     const todayTime = today.getTime();
     tasks = tasks.filter(task => {
@@ -240,7 +293,11 @@ function processOldTasks() {
     saveToLocalStorage();
 }
 
-// --- Rendering Logic ---
+/**
+ * Renders the calendar view for the next 15 days, including today, 
+ * with task cards and an add button for each day. 
+ * Tasks are displayed with category colors and overdue indicators.
+ */
 function renderCalendar() {
     const calendarEl = document.getElementById('calendar');
     if (!calendarEl) return;
@@ -280,15 +337,18 @@ function renderListView() {
     container.innerHTML = '<h2>Full Task List</h2><div id="list-content"></div>';
     const content = document.getElementById('list-content');
 
-    // Get all unique dates from tasks and sort them
-    const allUniqueDates = [...new Set(tasks.map(t => t.date))].sort();
+    // FIX 1: Group by normalized local midnight timestamps instead of exact string matches
+    const uniqueTimestamps = [...new Set(tasks.map(t => {
+        const d = new Date(t.date);
+        d.setHours(0, 0, 0, 0); // Force to midnight
+        return d.getTime();
+    }))].sort((a, b) => a - b);
     
-    allUniqueDates.forEach((dateStr, idx) => {
-        const dateObj = new Date(dateStr);
+    uniqueTimestamps.forEach((timestamp, idx) => {
+        const dateObj = new Date(timestamp);
         const section = document.createElement('div');
         section.className = 'list-section';
         
-        // Use the 'list-group-container' class for the task spacing
         section.innerHTML = `
             <div class="list-section-header">
                 ${dateObj.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
@@ -297,19 +357,28 @@ function renderListView() {
         `;
         content.appendChild(section);
         
-        // Render tasks into the newly created group
-        renderTasksForDate(dateStr, `list-group-${idx}`);
+        // Pass the normalized timestamp to the task renderer
+        renderTasksForDate(timestamp, `list-group-${idx}`);
     });
 }
 
-function renderTasksForDate(dateString, containerId) {
+/**
+ * Renders tasks into a specific container safely matching the normalized date
+ * @param {number|string} dateValue - The date value to match tasks against (can be a timestamp or ISO string)
+ * @param {string} containerId - The ID of the container element where tasks should be rendered
+ */
+function renderTasksForDate(dateValue, containerId) {
     const container = document.getElementById(containerId);
-    const targetDate = new Date(dateString).getTime();
+    
+    // FIX 2: Ensure the target comparison date is also forced to local midnight
+    const targetDateObj = new Date(dateValue);
+    targetDateObj.setHours(0, 0, 0, 0);
+    const targetDate = targetDateObj.getTime();
 
     const dayTasks = tasks.filter(t => {
         const tDate = new Date(t.date);
-        tDate.setHours(0,0,0,0);
-        return tDate.getTime() === targetDate;
+        tDate.setHours(0, 0, 0, 0);
+        return tDate.getTime() === targetDate; // Both are now guaranteed to be 00:00:00
     });
 
     dayTasks.forEach(task => {
@@ -317,7 +386,6 @@ function renderTasksForDate(dateString, containerId) {
         taskEl.className = `task-item ${task.completed ? 'completed' : ''}`;
         taskEl.setAttribute('data-category', task.category);
         
-        // Clicking the card opens Edit (but NOT when clicking checkbox or delete)
         taskEl.onclick = (e) => {
             if (e.target.type !== 'checkbox' && !e.target.classList.contains('btn-delete')) {
                 openModal(task.date, task.id);
