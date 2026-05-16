@@ -10,19 +10,37 @@
     <div id="sidebar">
         <div class="sidebar-content">
             <h2>Settings</h2>
-            <button class="menu-btn" onclick="toggleTaskActions()">Toggle Edit Mode</button>
+            <button class="menu-btn" onclick="toggleView()" id="viewToggleBtn">Switch to List View</button>
+            <button class="menu-btn" style="margin-top: 10px;" onclick="toggleTaskActions()">Toggle Delete Mode</button>
             <button class="menu-btn" style="margin-top: 10px;" onclick="openDailyModal()">Manage Daily Tasks</button>
+            
+            <hr style="border: 0; border-top: 1px solid var(--border-color); margin: 20px 0;">
+            <button class="btn-main-add" onclick="openModal(new Date().toISOString())">＋ Quick Add Task</button>
         </div>
-        <button id="sidebarToggle" onclick="toggleSidebar()"><img id="toggleIcon" src="arrow_left.svg" alt="toggle" width="25" height="25"></button>
+        <button id="sidebarToggle" onclick="toggleSidebar()">
+            <img id="toggleIcon" src="arrow_left.svg" alt="toggle" width="25" height="25">
+        </button>
     </div>
+
     <div id="calendar"></div>
+    <div id="list-view" style="display: none;"></div>
+
     <div class="modal-overlay" id="taskModal">
         <div class="modal">
-            <h3>New Task</h3>
+            <h3 id="modalTitle">New Task</h3>
+            <div id="categoryPreview" style="height: 4px; width: 100%; border-radius: 2px; margin-bottom: 15px; background: grey;"></div>
+            
+            <label class="field-label">Task Name:</label>
             <input type="text" id="taskTitle" placeholder="What needs to be done?">
-            <label style="color: var(--text-muted); font-size: 0.85rem; display: block; margin-bottom: 5px;">Optional Deadline:</label>
+            
+            <label class="field-label">Date to Perform Task:</label>
+            <input type="date" id="taskDate">
+            
+            <label class="field-label">Optional Deadline (Due Date):</label>
             <input type="date" id="taskDeadline">
-            <select id="taskCategory">
+            
+            <label class="field-label">Category:</label>
+            <select id="taskCategory" onchange="updateCategoryPreview(this.value)">
                 <option value="default">Default (Grey)</option>
                 <option value="task">Assignment (Pink)</option>
                 <option value="task_deadline">Task Deadline (Purple)</option>
@@ -30,20 +48,27 @@
                 <option value="exam">Exam (Red)</option>
                 <option value="game">Game (Orange)</option>
             </select>
-            <button onclick="saveTask()">Add Task</button>
+            <button id="saveTaskBtn" onclick="saveTask()">Save Task</button>
         </div>
     </div>
+
     <div class="modal-overlay" id="dailyModal">
         <div class="modal">
             <h3>Daily Templates</h3>
-            <p style="font-size: 0.8rem; color: var(--text-muted);">Tasks added here will be created automatically every day.</p>
             <div id="dailyTemplateList" style="margin-bottom: 15px; max-height: 200px; overflow-y: auto;"></div>
             
             <input type="text" id="newDailyTitle" placeholder="Routine task name...">
-            <button onclick="addDailyTemplate()" style="background: var(--btn-create); margin-bottom: 10px;">Add to Routine</button>
-            <button onclick="closeDailyModal()" style="background: #444;">Close</button>
+            <select id="newDailyCategory" style="width: 100%; padding: 10px; margin-bottom: 10px; background: #121212; color: white; border: 1px solid #333;">
+                <option value="default">Default</option>
+                <option value="task">Assignment</option>
+                <option value="study">Study</option>
+                <option value="game">Game</option>
+            </select>
+            <button onclick="addDailyTemplate()" style="background: var(--btn-create); margin-bottom: 10px; width: 100%;">Add to Routine</button>
+            <button onclick="closeDailyModal()" style="background: #444; width: 100%;">Close</button>
         </div>
     </div>
+
     <script src="app.js"></script>
 </body>
 </html>

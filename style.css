@@ -327,3 +327,130 @@ body.edit-mode .task-actions {
     display: block;
     pointer-events: none; /* Ensures the click registers on the button, not the image */
 }
+
+/* Main Add Button (Sidebar) */
+.btn-main-add {
+    background: linear-gradient(135deg, #28a745, #1e7e34);
+    color: white;
+    border: none;
+    padding: 12px;
+    width: 100%;
+    border-radius: 8px;
+    font-weight: bold;
+    cursor: pointer;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+}
+
+/* Checkbox Styling */
+.task-checkbox {
+    appearance: none;
+    width: 20px;
+    height: 20px;
+    border: 2px solid var(--text-muted);
+    border-radius: 4px;
+    cursor: pointer;
+    margin-right: 12px;
+    position: relative;
+    transition: all 0.2s;
+}
+.task-checkbox:checked {
+    background-color: var(--btn-complete);
+    border-color: var(--btn-complete);
+}
+.task-checkbox:checked::after {
+    content: '✔';
+    position: absolute;
+    color: white;
+    font-size: 14px;
+    left: 3px;
+    top: -1px;
+}
+
+/* List View Layout */
+#list-view {
+    width: 100%;
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 20px;
+    overflow-y: auto;
+    height: 90vh;
+}
+.list-section {
+    margin-bottom: 30px;
+}
+.list-section-header {
+    font-size: 1.2rem;
+    color: var(--text-muted);
+    margin-bottom: 10px;
+    border-bottom: 1px solid var(--border-color);
+}
+/* Overdue Badge */
+.overdue-counter {
+    background: #ff4444;
+    color: white;
+    font-size: 0.7rem;
+    padding: 2px 6px;
+    border-radius: 10px;
+    margin-left: 8px;
+}
+/* Field labels in modals */
+.field-label {
+    color: var(--text-muted);
+    font-size: 0.8rem;
+    display: block;
+    margin-bottom: 5px;
+}
+/* Visual interaction for items */
+.task-item {
+    cursor: pointer;
+    transition: transform 0.1s, background 0.2s;
+}
+.task-item:hover {
+    background-color: #2a2a2a;
+}
+/* Spacing for List View sections */
+.list-section {
+    margin-bottom: 40px; /* Space between date groups */
+}
+.list-section-header {
+    font-size: 1.1rem;
+    color: var(--text-muted);
+    margin-bottom: 15px; /* Space between the date header and the first task */
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 5px;
+}
+/* Ensure task items in list view have margins if they aren't in a .task-list container */
+.list-group-container {
+    display: flex;
+    flex-direction: column;
+    gap: 12px; /* This creates the space between individual tasks */
+}
+/* Spacing for List View sections */
+.list-section {
+    margin-bottom: 40px; 
+    width: 100%;
+}
+
+.list-section-header {
+    font-size: 1.1rem;
+    color: var(--text-muted);
+    margin-bottom: 15px;
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 8px;
+}
+
+/* Vertical spacing between tasks in the list */
+.list-group-container {
+    display: flex;
+    flex-direction: column;
+    gap: 12px; 
+}
+
+/* Modal formatting for labels */
+.field-label {
+    display: block;
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    margin-bottom: 5px;
+    margin-top: 5px;
+}
