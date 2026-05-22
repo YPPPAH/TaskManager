@@ -13,7 +13,13 @@
             <button class="menu-btn" onclick="toggleView()" id="viewToggleBtn">Switch to List View</button>
             <button class="menu-btn" style="margin-top: 10px;" onclick="toggleTaskActions()">Toggle Delete Mode</button>
             <button class="menu-btn" style="margin-top: 10px;" onclick="openDailyModal()">Manage Daily Tasks</button>
+            <hr style="border: 0; border-top: 1px solid var(--border-color); margin: 20px 0;">
+            <button class="menu-btn m-toggle" data-app="wallpaper">Launch Wallpaper</button>
+            <button class="menu-btn m-toggle" data-app="telegram" style="margin-top: 10px;">Launch Telegram</button>
+            <button class="menu-btn m-toggle" data-app="telegram" style="margin-top: 10px;">Launch Chrome</button>
+            <button class="menu-btn" style="margin-top: 10px;" onclick="window.location.href='steam://launch/582660'">Launch BDO</button>
             
+
             <hr style="border: 0; border-top: 1px solid var(--border-color); margin: 20px 0;">
             <button class="btn-main-add" onclick="openModal(new Date().toISOString())">＋ Quick Add Task</button>
         </div>
@@ -70,5 +76,6 @@
     </div>
 
     <script src="app.js"></script>
+    <script src="menu.js"></script>
 </body>
 </html>
