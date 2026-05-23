@@ -13,7 +13,6 @@ document.addEventListener('DOMContentLoaded', function() {
         const isRunning = localStorage.getItem("m-"+appName) === 'true';
         // Set button state based on stored value
         if (isRunning) {
-            btn.setAttribute('data-state', 'kill');
             btn.textContent = `Close ${capitalize(appName)}`;
         } 
     });
@@ -31,19 +30,38 @@ document.addEventListener('click', function(event) {
 
     if (isRunning) {
         window.location.href = `appmanager://kill/${appName}`; // Execute action kill
-        btn.setAttribute('data-state', 'kill');
         btn.textContent = `Launch ${capitalize(appName)}`;
         localStorage.removeItem("m-"+appName);// Clear state
     } else {
         window.location.href = `appmanager://run/${appName}`; // Execute action run
-        btn.setAttribute('data-state', 'run');
         btn.textContent = `Close ${capitalize(appName)}`;
         localStorage.setItem("m-"+appName, true);
     }
 });
 
 
-// Helper function to capitalize the app name (e.g., "wallpaper" -> "Wallpaper")
+document.addEventListener('click', function(event) {
+    const btn = event.target.closest('.m-soft-toggle');
+    if (!btn) return;
+    const appName = btn.getAttribute('data-app');
+    const formattedName = capitalize(appName);
+    let isRunning = localStorage.getItem("m-" + appName) === 'true';
+
+    if (isRunning) {
+        btn.textContent = `Launch ${formattedName}`;
+        localStorage.removeItem("m-" + appName);
+    } else {
+        window.location.href = `appmanager://run/${appName}`; // Execute action run
+        btn.textContent = `Close ${formattedName}`;
+        localStorage.setItem("m-" + appName, 'true'); // Save state
+    }
+});
+
+/**
+ * Helper function to capitalize the first letter of a string.
+ * @param {string} asd - The string to capitalize.
+ * @return {string} asds - The capitalized string.
+ */
 function capitalize(str) {
     if (!str) return '';
     return str.charAt(0).toUpperCase() + str.slice(1);
