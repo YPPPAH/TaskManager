@@ -13,12 +13,16 @@
             <button class="menu-btn" onclick="toggleView()" id="viewToggleBtn">Switch to List View</button>
             <button class="menu-btn" style="margin-top: 10px;" onclick="toggleTaskActions()">Toggle Delete Mode</button>
             <button class="menu-btn" style="margin-top: 10px;" onclick="openDailyModal()">Manage Daily Tasks</button>
+
+            <hr style="border: 0; border-top: 1px solid var(--border-color); margin: 20px 0;">
+            <button class="menu-btn" onclick="exportData()">⬇ Export Data</button>
+            <button class="menu-btn" style="margin-top: 10px;" onclick="importData()">⬆ Import Data</button>
+
             <hr style="border: 0; border-top: 1px solid var(--border-color); margin: 20px 0;">
             <button class="menu-btn m-toggle" data-app="wallpaper">Launch Wallpaper</button>
             <button class="menu-btn m-toggle" data-app="telegram" style="margin-top: 10px;">Launch Telegram</button>
             <button class="menu-btn m-soft-toggle" data-app="chrome" style="margin-top: 10px;">Launch Chrome</button>
             <button class="menu-btn" style="margin-top: 10px;" onclick="window.location.href='steam://launch/582660'">Launch BDO</button>
-            
 
             <hr style="border: 0; border-top: 1px solid var(--border-color); margin: 20px 0;">
             <button class="btn-main-add" onclick="openModal(new Date().toISOString())">＋ Quick Add Task</button>
@@ -31,20 +35,21 @@
     <div id="calendar"></div>
     <div id="list-view" style="display: none;"></div>
 
+    <!-- Task Modal -->
     <div class="modal-overlay" id="taskModal">
         <div class="modal">
             <h3 id="modalTitle">New Task</h3>
             <div id="categoryPreview" style="height: 4px; width: 100%; border-radius: 2px; margin-bottom: 15px; background: grey;"></div>
-            
+
             <label class="field-label">Task Name:</label>
             <input type="text" id="taskTitle" placeholder="What needs to be done?">
-            
+
             <label class="field-label">Date to Perform Task:</label>
             <input type="date" id="taskDate">
-            
+
             <label class="field-label">Optional Deadline (Due Date):</label>
             <input type="date" id="taskDeadline">
-            
+
             <label class="field-label">Category:</label>
             <select id="taskCategory" onchange="updateCategoryPreview(this.value)">
                 <option value="default">Default (Grey)</option>
@@ -54,15 +59,20 @@
                 <option value="exam">Exam (Red)</option>
                 <option value="game">Game (Orange)</option>
             </select>
+
+            <label class="field-label">Link (optional):</label>
+            <input type="url" id="taskLink" placeholder="https://...">
+
             <button id="saveTaskBtn" onclick="saveTask()">Save Task</button>
         </div>
     </div>
 
+    <!-- Daily Tasks Modal -->
     <div class="modal-overlay" id="dailyModal">
         <div class="modal">
             <h3>Daily Templates</h3>
             <div id="dailyTemplateList" style="margin-bottom: 15px; max-height: 200px; overflow-y: auto;"></div>
-            
+
             <input type="text" id="newDailyTitle" placeholder="Routine task name...">
             <select id="newDailyCategory" style="width: 100%; padding: 10px; margin-bottom: 10px; background: #121212; color: white; border: 1px solid #333;">
                 <option value="default">Default</option>

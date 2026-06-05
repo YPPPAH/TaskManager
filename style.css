@@ -5,20 +5,20 @@
     --border-color: #333333;
     --text-main: #ffffff;
     --text-muted: #a0a0a0;
-    
+
     /* Action Colors */
     --btn-create: darkgreen;
     --btn-delete: darkred;
-    --btn-complete: #b8860b; 
-    
+    --btn-complete: #b8860b;
+
     /* Category Colors */
     --cat-default: grey;
-    --cat-exam: #ff4444; 
-    --cat-task: #ff66b2; 
-    --cat-overdue: #800080; 
-    --cat-game: #ffa500; /* Orange */
-    --cat-study: #007bff; /* Blue */
-    --cat-task-deadline: #9370db; /* Medium Purple */
+    --cat-exam: #ff4444;
+    --cat-task: #ff66b2;
+    --cat-overdue: #800080;
+    --cat-game: #ffa500;
+    --cat-study: #007bff;
+    --cat-task-deadline: #9370db;
 }
 
 body {
@@ -51,8 +51,18 @@ body {
     border-radius: 8px;
     display: flex;
     flex-direction: column;
-    padding: 15px 10px 15px 15px; /* Slight right padding adjustment for scrollbar */
-    overflow: hidden; /* Prevents the whole card from scrolling */
+    padding: 15px 10px 15px 15px;
+    overflow: hidden;
+    cursor: default;
+}
+
+/* Clicking a future day card opens Add Task modal for that day */
+.day-card:not(.today) {
+    cursor: pointer;
+    transition: border-color 0.15s;
+}
+.day-card:not(.today):hover {
+    border-color: #555;
 }
 
 /* Make Today Span 2 Rows */
@@ -65,7 +75,7 @@ body {
 .day-header {
     display: flex;
     justify-content: space-between;
-    align-items: flex-start; /* Aligns the button to the top of the header */
+    align-items: flex-start;
     margin-bottom: 15px;
     padding-bottom: 10px;
     border-bottom: 1px solid var(--border-color);
@@ -96,38 +106,31 @@ body {
     height: 28px;
     font-size: 1.4rem;
     cursor: pointer;
-    
-    /* Pure Flexbox centering for the icon */
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 0; /* Remove any padding */
-    margin-top: 4px; /* Adjust this value if you want the button higher or lower relative to the date */
-    
+    padding: 0;
+    margin-top: 4px;
     transition: opacity 0.2s;
 }
 .btn-add:hover { opacity: 0.8; }
 
 .btn-action {
-    width: 22px; 
+    width: 22px;
     height: 22px;
     border-radius: 50%;
     border: none;
     cursor: pointer;
-    
-    /* Pure Flexbox centering */
     display: flex;
     align-items: center;
     justify-content: center;
     padding: 0;
-    
     color: white;
     font-weight: bold;
     font-size: 0.75rem;
     transition: transform 0.1s;
 }
 .btn-action:active { transform: scale(0.9); }
-
 .btn-complete { background-color: var(--btn-complete); }
 .btn-delete { background-color: var(--btn-delete); }
 
@@ -136,12 +139,10 @@ body {
     display: flex;
     flex-direction: column;
     gap: 10px;
-    flex-grow: 1; /* Takes up remaining space */
-    overflow-y: auto; /* Makes only the tasks scrollable */
-    padding-right: 5px; /* Prevents text from hitting the scrollbar */
+    flex-grow: 1;
+    overflow-y: auto;
+    padding-right: 5px;
 }
-
-/* Scrollbar styling moved to the task list */
 .task-list::-webkit-scrollbar { width: 6px; }
 .task-list::-webkit-scrollbar-thumb { background: #444; border-radius: 4px; }
 
@@ -154,8 +155,11 @@ body {
     justify-content: space-between;
     align-items: center;
     animation: fadeIn 0.3s ease;
-    flex-shrink: 0; /* Prevents tasks from squishing when list gets full */
+    flex-shrink: 0;
+    cursor: pointer;
+    transition: transform 0.1s, background 0.2s;
 }
+.task-item:hover { background-color: #2a2a2a; }
 
 @keyframes fadeIn {
     from { opacity: 0; transform: translateY(-5px); }
@@ -169,28 +173,20 @@ body {
     font-size: 0.95rem;
 }
 
-/* Task Actions Toggle Logic */
+/* Task Actions Toggle */
 .task-actions {
-    display: none; /* HIDDEN BY DEFAULT */
-    gap: 8px;
-    align-items: center;
+    display: none;
 }
-
-/* When the body has this class, show the buttons! */
 body.edit-mode .task-actions {
     display: flex;
 }
 
 /* Category Borders */
-.task-item[data-category="exam"] { border-left-color: var(--cat-exam); }
-.task-item[data-category="task"] { border-left-color: var(--cat-task); }
-.task-item[data-category="overdue"] { 
-    border-left-color: var(--cat-overdue); 
-    color: #d8b4e2;
-}
-/* NEW Category Borders */
-.task-item[data-category="game"] { border-left-color: var(--cat-game); }
-.task-item[data-category="study"] { border-left-color: var(--cat-study); }
+.task-item[data-category="exam"]          { border-left-color: var(--cat-exam); }
+.task-item[data-category="task"]          { border-left-color: var(--cat-task); }
+.task-item[data-category="overdue"]       { border-left-color: var(--cat-overdue); color: #d8b4e2; }
+.task-item[data-category="game"]          { border-left-color: var(--cat-game); }
+.task-item[data-category="study"]         { border-left-color: var(--cat-study); }
 .task-item[data-category="task_deadline"] { border-left-color: var(--cat-task-deadline); }
 
 /* Completed State */
@@ -199,6 +195,16 @@ body.edit-mode .task-actions {
     text-decoration: line-through;
     border-left-color: #555;
 }
+
+/* Link button inside tasks */
+.task-link {
+    font-size: 1rem;
+    text-decoration: none;
+    opacity: 0.7;
+    transition: opacity 0.15s;
+    flex-shrink: 0;
+}
+.task-link:hover { opacity: 1; }
 
 /* Modal Styling */
 .modal-overlay {
@@ -238,6 +244,7 @@ body.edit-mode .task-actions {
     cursor: pointer;
     font-weight: bold;
 }
+
 /* Deadline Badges */
 .due-badge {
     font-size: 0.7rem;
@@ -248,7 +255,6 @@ body.edit-mode .task-actions {
     display: inline-block;
     margin-top: 5px;
 }
-
 .due-warning {
     font-size: 0.7rem;
     background-color: darkred;
@@ -259,28 +265,34 @@ body.edit-mode .task-actions {
     margin-top: 5px;
     font-weight: bold;
 }
-/* --- Sidebar Styles (Right Aligned) --- */
+
+/* Overdue counter badge (inline next to title) */
+.overdue-counter {
+    background: #ff4444;
+    color: white;
+    font-size: 0.7rem;
+    padding: 2px 6px;
+    border-radius: 10px;
+    margin-left: 8px;
+}
+
+/* --- Sidebar --- */
 #sidebar {
     position: fixed;
-    right: -250px; /* Hidden off-screen to the right */
+    right: -250px;
     top: 0;
     width: 250px;
     height: 100vh;
     background-color: var(--surface-color);
-    border-left: 2px solid var(--border-color); /* Border on the left now */
-    transition: right 0.3s ease; 
+    border-left: 2px solid var(--border-color);
+    transition: right 0.3s ease;
     z-index: 1000;
     box-sizing: border-box;
+    overflow-y: auto;
 }
+#sidebar.open { right: 0; }
 
-#sidebar.open {
-    right: 0; /* Slides in from the right */
-}
-
-.sidebar-content {
-    padding: 20px;
-}
-
+.sidebar-content { padding: 20px; }
 .sidebar-content h2 {
     margin-top: 0;
     border-bottom: 1px solid var(--border-color);
@@ -298,14 +310,12 @@ body.edit-mode .task-actions {
     font-weight: bold;
     transition: background-color 0.2s;
 }
-
 .menu-btn:hover { background-color: #444444; }
 
-/* Right-Center Arrow Button */
 #sidebarToggle {
     position: absolute;
     top: 50%;
-    left: -32px; /* Adjusted slightly for the border/width */
+    left: -32px;
     transform: translateY(-50%);
     width: 32px;
     height: 60px;
@@ -315,20 +325,13 @@ body.edit-mode .task-actions {
     border-right: none;
     border-radius: 8px 0 0 8px;
     cursor: pointer;
-    
-    /* Center the SVG icon */
     display: flex;
     align-items: center;
     justify-content: center;
     padding: 0;
 }
+#sidebarToggle img { display: block; pointer-events: none; }
 
-#sidebarToggle img {
-    display: block;
-    pointer-events: none; /* Ensures the click registers on the button, not the image */
-}
-
-/* Main Add Button (Sidebar) */
 .btn-main-add {
     background: linear-gradient(135deg, #28a745, #1e7e34);
     color: white;
@@ -341,11 +344,12 @@ body.edit-mode .task-actions {
     box-shadow: 0 4px 15px rgba(0,0,0,0.3);
 }
 
-/* Checkbox Styling */
+/* Checkbox */
 .task-checkbox {
     appearance: none;
     width: 20px;
     height: 20px;
+    min-width: 20px;
     border: 2px solid var(--text-muted);
     border-radius: 4px;
     cursor: pointer;
@@ -366,7 +370,7 @@ body.edit-mode .task-actions {
     top: -1px;
 }
 
-/* List View Layout */
+/* List View */
 #list-view {
     width: 100%;
     max-width: 800px;
@@ -376,61 +380,9 @@ body.edit-mode .task-actions {
     height: 90vh;
 }
 .list-section {
-    margin-bottom: 30px;
-}
-.list-section-header {
-    font-size: 1.2rem;
-    color: var(--text-muted);
-    margin-bottom: 10px;
-    border-bottom: 1px solid var(--border-color);
-}
-/* Overdue Badge */
-.overdue-counter {
-    background: #ff4444;
-    color: white;
-    font-size: 0.7rem;
-    padding: 2px 6px;
-    border-radius: 10px;
-    margin-left: 8px;
-}
-/* Field labels in modals */
-.field-label {
-    color: var(--text-muted);
-    font-size: 0.8rem;
-    display: block;
-    margin-bottom: 5px;
-}
-/* Visual interaction for items */
-.task-item {
-    cursor: pointer;
-    transition: transform 0.1s, background 0.2s;
-}
-.task-item:hover {
-    background-color: #2a2a2a;
-}
-/* Spacing for List View sections */
-.list-section {
-    margin-bottom: 40px; /* Space between date groups */
-}
-.list-section-header {
-    font-size: 1.1rem;
-    color: var(--text-muted);
-    margin-bottom: 15px; /* Space between the date header and the first task */
-    border-bottom: 1px solid var(--border-color);
-    padding-bottom: 5px;
-}
-/* Ensure task items in list view have margins if they aren't in a .task-list container */
-.list-group-container {
-    display: flex;
-    flex-direction: column;
-    gap: 12px; /* This creates the space between individual tasks */
-}
-/* Spacing for List View sections */
-.list-section {
-    margin-bottom: 40px; 
+    margin-bottom: 40px;
     width: 100%;
 }
-
 .list-section-header {
     font-size: 1.1rem;
     color: var(--text-muted);
@@ -438,15 +390,13 @@ body.edit-mode .task-actions {
     border-bottom: 1px solid var(--border-color);
     padding-bottom: 8px;
 }
-
-/* Vertical spacing between tasks in the list */
 .list-group-container {
     display: flex;
     flex-direction: column;
-    gap: 12px; 
+    gap: 12px;
 }
 
-/* Modal formatting for labels */
+/* Modal field labels */
 .field-label {
     display: block;
     font-size: 0.8rem;
