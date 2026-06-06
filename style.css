@@ -288,11 +288,16 @@ body.edit-mode .task-actions {
     transition: right 0.3s ease;
     z-index: 1000;
     box-sizing: border-box;
-    overflow-y: auto;
+    overflow: visible; /* must NOT clip — toggle tab sits outside at left:-32px */
 }
 #sidebar.open { right: 0; }
 
-.sidebar-content { padding: 20px; }
+.sidebar-content {
+    padding: 20px;
+    height: 100%;
+    overflow-y: auto; /* scroll lives here, not on #sidebar */
+    box-sizing: border-box;
+}
 .sidebar-content h2 {
     margin-top: 0;
     border-bottom: 1px solid var(--border-color);

@@ -104,9 +104,10 @@ function importData() {
 // --- Sidebar & View ---
 function toggleSidebar() {
     const sidebar = document.getElementById('sidebar');
-    const toggleIcon = document.getElementById('toggleIcon');
+    const arrow = document.getElementById('toggleIconArrow');
     sidebar.classList.toggle('open');
-    toggleIcon.src = sidebar.classList.contains('open') ? 'arrow_right.svg' : 'arrow_left.svg';
+    // Points left (◂) when closed, right (▸) when open
+    arrow.setAttribute('points', sidebar.classList.contains('open') ? '9 18 15 12 9 6' : '15 18 9 12 15 6');
 }
 
 function applyView() {
