@@ -1,127 +1,114 @@
-// --- State Management ---
+// =============================================================
+//  State
+// =============================================================
 let tasks = [];
 let dailyTemplates = JSON.parse(localStorage.getItem('org_daily_templates')) || [];
-let selectedDateForNewTask = null;
-let editingTaskId = null;
-let currentView = localStorage.getItem('org_app_view') || 'calendar';
+let editingTaskId   = null;
+let editingDailyId  = null;
+let currentView     = localStorage.getItem('org_app_view') || 'calendar';
+
 let today = new Date();
 today.setHours(0, 0, 0, 0);
 
-// --- Helpers ---
-function toLocalMidnightISO(dateVal) {
-    const d = new Date(dateVal);
-    const year = d.getFullYear();
-    const month = String(d.getMonth() + 1).padStart(2, '0');
+// =============================================================
+//  Date helpers  (always work in local calendar dates)
+// =============================================================
+function toLocalISO(dateVal) {
+    const d = (typeof dateVal === 'string') ? new Date(dateVal) : dateVal;
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
     const day = String(d.getDate()).padStart(2, '0');
-    return `${year}-${month}-${day}T00:00:00.000Z`;
+    return `${y}-${m}-${day}T00:00:00.000`;   // no Z – keep it local
 }
 
-function getLocalYYYYMMDD(dateVal) {
-    const d = new Date(dateVal);
-    const year = d.getFullYear();
-    const month = String(d.getMonth() + 1).padStart(2, '0');
+function toYMD(dateVal) {
+    const d = (typeof dateVal === 'string') ? new Date(dateVal) : dateVal;
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
     const day = String(d.getDate()).padStart(2, '0');
-    return `${year}-${month}-${day}`;
+    return `${y}-${m}-${day}`;
 }
 
-function daysBetween(dateA, dateB) {
-    const a = new Date(dateA); a.setHours(0,0,0,0);
-    const b = new Date(dateB); b.setHours(0,0,0,0);
-    return Math.round((b.getTime() - a.getTime()) / (1000 * 60 * 60 * 24));
+function midnightOf(dateVal) {
+    const d = new Date(dateVal);
+    d.setHours(0, 0, 0, 0);
+    return d;
 }
 
-// --- Storage ---
-function saveToLocalStorage() {
-    localStorage.setItem('org_app_tasks', JSON.stringify(tasks));
+function daysBetween(a, b) {
+    // positive = b is in the future relative to a
+    return Math.round((midnightOf(b) - midnightOf(a)) / 86400000);
 }
 
-function loadFromLocalStorage() {
-    const savedData = localStorage.getItem('org_app_tasks');
-    if (savedData) {
-        tasks = JSON.parse(savedData);
-        return true;
-    }
+// =============================================================
+//  Storage
+// =============================================================
+function save() { localStorage.setItem('org_app_tasks', JSON.stringify(tasks)); }
+
+function load() {
+    const raw = localStorage.getItem('org_app_tasks');
+    if (raw) { tasks = JSON.parse(raw); return true; }
     return false;
 }
 
-// --- Export / Import ---
+// =============================================================
+//  Export / Import
+// =============================================================
 function exportData() {
-    const payload = {
-        tasks,
-        dailyTemplates,
-        exportedAt: new Date().toISOString()
-    };
-    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `org_backup_${getLocalYYYYMMDD(new Date())}.json`;
+    const blob = new Blob([JSON.stringify({ tasks, dailyTemplates, exportedAt: new Date().toISOString() }, null, 2)], { type: 'application/json' });
+    const a = Object.assign(document.createElement('a'), { href: URL.createObjectURL(blob), download: `org_backup_${toYMD(new Date())}.json` });
     a.click();
-    URL.revokeObjectURL(url);
+    URL.revokeObjectURL(a.href);
 }
 
 function importData() {
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.accept = '.json';
-    input.onchange = (e) => {
+    const input = Object.assign(document.createElement('input'), { type: 'file', accept: '.json' });
+    input.onchange = e => {
         const file = e.target.files[0];
         if (!file) return;
         const reader = new FileReader();
-        reader.onload = (ev) => {
+        reader.onload = ev => {
             try {
                 const data = JSON.parse(ev.target.result);
-                if (!data.tasks || !Array.isArray(data.tasks)) {
-                    return alert('Invalid backup file: missing tasks array.');
-                }
-                const merge = confirm(
-                    `Import ${data.tasks.length} tasks and ${(data.dailyTemplates||[]).length} daily templates?\n\nClick OK to MERGE with existing data, or Cancel to abort.`
-                );
-                if (!merge) return;
-
-                // Merge: avoid duplicate IDs
-                const existingIds = new Set(tasks.map(t => t.id));
-                const newTasks = data.tasks.filter(t => !existingIds.has(t.id));
-                tasks = [...tasks, ...newTasks];
-
+                if (!Array.isArray(data.tasks)) return alert('Invalid backup file.');
+                if (!confirm(`Import ${data.tasks.length} tasks and ${(data.dailyTemplates||[]).length} templates?\nClick OK to MERGE.`)) return;
+                const existing = new Set(tasks.map(t => t.id));
+                const added = data.tasks.filter(t => !existing.has(t.id));
+                tasks = [...tasks, ...added];
                 if (data.dailyTemplates) {
                     dailyTemplates = data.dailyTemplates;
                     localStorage.setItem('org_daily_templates', JSON.stringify(dailyTemplates));
                 }
-
-                saveToLocalStorage();
-                applyView();
-                alert(`Imported ${newTasks.length} new tasks successfully.`);
-            } catch (err) {
-                alert('Failed to parse file. Make sure it is a valid JSON backup.');
-            }
+                save(); applyView();
+                alert(`Imported ${added.length} new tasks.`);
+            } catch { alert('Failed to parse backup file.'); }
         };
         reader.readAsText(file);
     };
     input.click();
 }
 
-// --- Sidebar & View ---
+// =============================================================
+//  Sidebar / View
+// =============================================================
 function toggleSidebar() {
     const sidebar = document.getElementById('sidebar');
-    const arrow = document.getElementById('toggleIconArrow');
+    const arrow   = document.getElementById('toggleIconArrow');
     sidebar.classList.toggle('open');
-    // Points left (◂) when closed, right (▸) when open
     arrow.setAttribute('points', sidebar.classList.contains('open') ? '9 18 15 12 9 6' : '15 18 9 12 15 6');
 }
 
 function applyView() {
-    const cal = document.getElementById('calendar');
+    const cal  = document.getElementById('calendar');
     const list = document.getElementById('list-view');
-    const btn = document.getElementById('viewToggleBtn');
-
+    const btn  = document.getElementById('viewToggleBtn');
     if (currentView === 'list') {
-        cal.style.display = 'none';
+        cal.style.display  = 'none';
         list.style.display = 'block';
         if (btn) btn.innerText = 'Switch to Calendar View';
         renderListView();
     } else {
-        cal.style.display = 'grid';
+        cal.style.display  = 'grid';
         list.style.display = 'none';
         if (btn) btn.innerText = 'Switch to List View';
         renderCalendar();
@@ -129,7 +116,7 @@ function applyView() {
 }
 
 function toggleView() {
-    currentView = (currentView === 'calendar') ? 'list' : 'calendar';
+    currentView = currentView === 'calendar' ? 'list' : 'calendar';
     localStorage.setItem('org_app_view', currentView);
     applyView();
 }
@@ -139,400 +126,408 @@ function toggleTaskActions() {
     localStorage.setItem('org_app_edit_mode', document.body.classList.contains('edit-mode'));
 }
 
-// --- Modal ---
+// =============================================================
+//  Task Modal
+// =============================================================
 function openModal(dateStr = null, taskId = null) {
     editingTaskId = taskId;
-    const modalTitle = document.getElementById('modalTitle');
-    const saveBtn = document.getElementById('saveTaskBtn');
-    const dateInput = document.getElementById('taskDate');
 
-    if (!dateStr && !taskId) dateStr = new Date();
+    const isEditing = !!taskId;
+    document.getElementById('modalTitle').innerText  = isEditing ? 'Edit Task' : 'New Task';
+    document.getElementById('saveTaskBtn').innerText = isEditing ? 'Update Task' : 'Add Task';
 
-    if (taskId) {
-        const task = tasks.find(t => t.id === taskId);
-        modalTitle.innerText = 'Edit Task';
-        saveBtn.innerText = 'Update Task';
-        document.getElementById('taskTitle').value = task.title;
-        document.getElementById('taskCategory').value = task.category === 'overdue' ? (task.originalCategory || 'default') : task.category;
-        document.getElementById('taskDeadline').value = task.deadline || '';
-        document.getElementById('taskLink').value = task.link || '';
-        dateInput.value = getLocalYYYYMMDD(task.originalDate || task.date);
-        updateCategoryPreview(task.category === 'overdue' ? (task.originalCategory || 'default') : task.category);
+    if (isEditing) {
+        const t = tasks.find(t => t.id === taskId);
+        const displayCat = t.category === 'overdue' ? (t.originalCategory || 'default') : t.category;
+        document.getElementById('taskTitle').value    = t.title;
+        document.getElementById('taskCategory').value = displayCat;
+        document.getElementById('taskDate').value     = toYMD(t.originalDate || t.date);
+        document.getElementById('taskLink').value     = t.link || '';
+        document.getElementById('taskPinned').checked = !!t.pinned;
+        updateCategoryPreview(displayCat);
     } else {
-        editingTaskId = null;
-        modalTitle.innerText = 'New Task';
-        saveBtn.innerText = 'Add Task';
-        document.getElementById('taskTitle').value = '';
+        document.getElementById('taskTitle').value    = '';
         document.getElementById('taskCategory').value = 'default';
-        document.getElementById('taskDeadline').value = '';
-        document.getElementById('taskLink').value = '';
-        dateInput.value = getLocalYYYYMMDD(dateStr);
+        document.getElementById('taskDate').value     = toYMD(dateStr || new Date());
+        document.getElementById('taskLink').value     = '';
+        document.getElementById('taskPinned').checked = false;
         updateCategoryPreview('default');
     }
 
     document.getElementById('taskModal').style.display = 'flex';
+    document.getElementById('taskTitle').focus();
 }
 
 function closeModal() {
     document.getElementById('taskModal').style.display = 'none';
+    editingTaskId = null;
 }
 
 function saveTask() {
-    const title = document.getElementById('taskTitle').value;
+    const title    = document.getElementById('taskTitle').value.trim();
     const category = document.getElementById('taskCategory').value;
-    const deadline = document.getElementById('taskDeadline').value;
-    const taskDate = document.getElementById('taskDate').value;
-    const link = document.getElementById('taskLink').value.trim();
+    const dateVal  = document.getElementById('taskDate').value;
+    const link     = document.getElementById('taskLink').value.trim();
+    const pinned   = document.getElementById('taskPinned').checked;
 
-    if (!title.trim() || !taskDate) return alert('Please enter a title and a valid date.');
+    if (!title || !dateVal) return alert('Please enter a title and a date.');
 
-    // Store as local-midnight ISO to avoid timezone shifts
-    const formattedDate = toLocalMidnightISO(taskDate + 'T12:00:00');
+    const formattedDate = toLocalISO(dateVal + 'T12:00:00');
 
     if (editingTaskId) {
-        const index = tasks.findIndex(t => t.id === editingTaskId);
-        const existing = tasks[index];
-        tasks[index] = {
-            ...existing,
-            title,
-            category,
-            deadline: deadline || null,
+        const idx = tasks.findIndex(t => t.id === editingTaskId);
+        const old = tasks[idx];
+        tasks[idx] = {
+            ...old,
+            title, category,
+            originalCategory: category,
             date: formattedDate,
             originalDate: formattedDate,
-            originalCategory: category,
-            link: link || null
+            link: link || null,
+            pinned,
+            daysOverdue: undefined   // recalculated on next load
         };
-        // Clear overdue state if editing
-        if (tasks[index].category !== 'overdue') {
-            delete tasks[index].daysOverdue;
-        }
+        if (tasks[idx].category !== 'overdue') delete tasks[idx].daysOverdue;
     } else {
         tasks.push({
-            id: Date.now(),
+            id: Date.now() + Math.random(),
             date: formattedDate,
             originalDate: formattedDate,
-            title,
-            category,
+            title, category,
             originalCategory: category,
-            deadline: deadline || null,
             link: link || null,
+            pinned,
             completed: false
         });
     }
 
     closeModal();
-    saveToLocalStorage();
+    save();
     applyView();
 }
 
-// --- Task Actions ---
+// =============================================================
+//  Task Actions
+// =============================================================
 function deleteTask(id) {
     tasks = tasks.filter(t => t.id !== id);
-    saveToLocalStorage();
-    currentView === 'calendar' ? renderCalendar() : renderListView();
+    save();
+    applyView();
 }
 
 function completeTask(id) {
-    const task = tasks.find(t => t.id === id);
-    if (task) {
-        task.completed = !task.completed;
-        saveToLocalStorage();
-        currentView === 'calendar' ? renderCalendar() : renderListView();
-    }
+    const t = tasks.find(t => t.id === id);
+    if (t) { t.completed = !t.completed; save(); applyView(); }
 }
 
-// --- Daily Templates ---
+// =============================================================
+//  Daily Templates Modal
+// =============================================================
 function openDailyModal() {
+    editingDailyId = null;
     document.getElementById('dailyModal').style.display = 'flex';
     renderDailyTemplates();
+    resetDailyForm();
 }
 
 function closeDailyModal() {
     document.getElementById('dailyModal').style.display = 'none';
+    editingDailyId = null;
+}
+
+function resetDailyForm() {
+    editingDailyId = null;
+    document.getElementById('newDailyTitle').value    = '';
+    document.getElementById('newDailyCategory').value = 'default';
+    document.getElementById('newDailyLink').value     = '';
+    document.getElementById('dailySaveBtn').innerText  = 'Add to Routine';
+    document.getElementById('dailyCancelEdit').style.display = 'none';
 }
 
 function renderDailyTemplates() {
     const list = document.getElementById('dailyTemplateList');
-    list.innerHTML = dailyTemplates.map((t, index) => `
-        <div style="display:flex; justify-content:space-between; background:#121212; padding:8px; margin-bottom:5px; border-radius:4px; border-left: 4px solid var(--cat-${t.category})">
-            <span style="font-size:0.9rem;">${t.title}</span>
-            <button onclick="removeDailyTemplate(${index})" style="background:darkred; border:none; color:white; border-radius:4px; padding:2px 8px; cursor:pointer;">✖</button>
+    if (dailyTemplates.length === 0) {
+        list.innerHTML = '<p style="color:var(--text-muted);font-size:0.85rem;margin:0;">No routines yet. Add one below.</p>';
+        return;
+    }
+    list.innerHTML = dailyTemplates.map((t, i) => `
+        <div class="daily-item" style="border-left-color: var(--cat-${t.category || 'default'})">
+            <div class="daily-item-info">
+                <span class="daily-item-title">${escapeHtml(t.title)}</span>
+                ${t.link ? `<a href="${escapeAttr(t.link)}" target="_blank" rel="noopener" class="task-link" title="Open link" onclick="event.stopPropagation()">🔗</a>` : ''}
+            </div>
+            <div class="daily-item-actions">
+                <button class="btn-daily-edit" onclick="editDailyTemplate(${i})">✎</button>
+                <button class="btn-daily-del"  onclick="removeDailyTemplate(${i})">✖</button>
+            </div>
         </div>
     `).join('');
 }
 
-function addDailyTemplate() {
-    const title = document.getElementById('newDailyTitle').value;
+function editDailyTemplate(index) {
+    const t = dailyTemplates[index];
+    editingDailyId = index;
+    document.getElementById('newDailyTitle').value    = t.title;
+    document.getElementById('newDailyCategory').value = t.category || 'default';
+    document.getElementById('newDailyLink').value     = t.link || '';
+    document.getElementById('dailySaveBtn').innerText  = 'Update Routine';
+    document.getElementById('dailyCancelEdit').style.display = 'inline-block';
+    document.getElementById('newDailyTitle').focus();
+}
+
+function saveDailyTemplate() {
+    const title    = document.getElementById('newDailyTitle').value.trim();
     const category = document.getElementById('newDailyCategory').value;
-    if (title.trim()) {
-        dailyTemplates.push({ title: title.trim(), category });
-        localStorage.setItem('org_daily_templates', JSON.stringify(dailyTemplates));
-        document.getElementById('newDailyTitle').value = '';
-        renderDailyTemplates();
-        checkAndApplyDailyTemplates();
+    const link     = document.getElementById('newDailyLink').value.trim();
+    if (!title) return;
+
+    if (editingDailyId !== null) {
+        dailyTemplates[editingDailyId] = { ...dailyTemplates[editingDailyId], title, category, link: link || null };
+    } else {
+        dailyTemplates.push({ id: Date.now(), title, category, link: link || null });
     }
+
+    localStorage.setItem('org_daily_templates', JSON.stringify(dailyTemplates));
+    resetDailyForm();
+    renderDailyTemplates();
+    checkAndApplyDailyTemplates();
 }
 
 function removeDailyTemplate(index) {
+    if (!confirm(`Remove "${dailyTemplates[index].title}" from daily routines?`)) return;
     dailyTemplates.splice(index, 1);
     localStorage.setItem('org_daily_templates', JSON.stringify(dailyTemplates));
     renderDailyTemplates();
 }
 
-/**
- * Checks which days are missing daily templates and applies them.
- * Uses a "last applied" date per template to avoid re-spawning on the same day
- * and to correctly backfill missed days without clobbering existing instances.
- */
+// =============================================================
+//  Daily Template Engine
+//  - Incomplete instance from a past day → reschedule to today
+//  - No instance today and all past ones completed → fresh task
+// =============================================================
 function checkAndApplyDailyTemplates() {
-    const todayStr = getLocalYYYYMMDD(today);
+    const todayStr = toYMD(today);
     let updated = false;
 
     dailyTemplates.forEach(temp => {
-        // Find the most recent date this template was scheduled (completed or not)
-        const instances = tasks.filter(t => t.title === temp.title && t.isDailyTemplate);
-        
-        // Check if there's already an instance for today
-        const hasToday = instances.some(t => getLocalYYYYMMDD(t.originalDate || t.date) === todayStr);
+        // Match by template id (fall back to title for legacy templates)
+        const instances = tasks.filter(t => t.isDailyTemplate &&
+            (temp.id ? t.dailyTemplateId === temp.id : t.title === temp.title));
+
+        const hasToday = instances.some(t => toYMD(t.originalDate || t.date) === todayStr);
         if (hasToday) return;
 
-        // Find the most recent incomplete instance (overdue daily task to carry forward)
-        const incompleteInstances = instances.filter(t => !t.completed);
-        
-        if (incompleteInstances.length > 0) {
-            // Move the existing incomplete one to today instead of duplicating
-            // (sort by date descending, take latest)
-            incompleteInstances.sort((a, b) => new Date(b.originalDate || b.date) - new Date(a.originalDate || a.date));
-            const toReschedule = incompleteInstances[0];
-            toReschedule.date = toLocalMidnightISO(todayStr + 'T12:00:00');
-            toReschedule.originalDate = toReschedule.originalDate || toReschedule.date;
-            // Keep originalDate as the first missed day for reference, update display date to today
-            toReschedule.date = toLocalMidnightISO(todayStr + 'T12:00:00');
-            // Remove overdue state since we're moving it to today
-            delete toReschedule.daysOverdue;
-            toReschedule.category = toReschedule.originalCategory || temp.category;
+        const incomplete = instances
+            .filter(t => !t.completed)
+            .sort((a, b) => new Date(b.originalDate || b.date) - new Date(a.originalDate || a.date));
+
+        if (incomplete.length > 0) {
+            // Carry the most recent incomplete instance forward to today
+            const carry         = incomplete[0];
+            carry.date          = toLocalISO(todayStr + 'T12:00:00');
+            carry.category      = carry.originalCategory || temp.category;
+            carry.link          = temp.link || carry.link || null;   // keep template link fresh
+            delete carry.daysOverdue;
             updated = true;
         } else {
-            // No incomplete instance: create fresh for today
             tasks.push({
                 id: Date.now() + Math.random(),
-                date: toLocalMidnightISO(todayStr + 'T12:00:00'),
-                originalDate: toLocalMidnightISO(todayStr + 'T12:00:00'),
+                dailyTemplateId: temp.id || null,
+                date: toLocalISO(todayStr + 'T12:00:00'),
+                originalDate: toLocalISO(todayStr + 'T12:00:00'),
                 title: temp.title,
-                category: temp.category,
-                originalCategory: temp.category,
+                category: temp.category || 'default',
+                originalCategory: temp.category || 'default',
+                link: temp.link || null,
+                pinned: false,
                 completed: false,
-                deadline: null,
-                link: null,
                 isDailyTemplate: true
             });
             updated = true;
         }
     });
 
-    if (updated) { saveToLocalStorage(); }
+    if (updated) save();
 }
 
-/**
- * Processes old tasks:
- * - Removes completed past tasks
- * - Marks incomplete past tasks as overdue WITHOUT changing their date
- *   (daysOverdue is computed fresh each load from originalDate)
- */
+// =============================================================
+//  Process old tasks on load
+//  - Remove completed past tasks
+//  - Mark incomplete non-pinned past tasks as overdue (move to today card)
+//  - Pinned tasks: always stay on today, never marked overdue
+// =============================================================
 function processOldTasks() {
     const todayTime = today.getTime();
 
     // Remove completed tasks from past days
-    tasks = tasks.filter(task => {
-        const taskDate = new Date(task.originalDate || task.date);
-        taskDate.setHours(0,0,0,0);
-        return !(taskDate.getTime() < todayTime && task.completed);
+    tasks = tasks.filter(t => {
+        const d = midnightOf(t.originalDate || t.date);
+        return !(d < todayTime && t.completed);
     });
 
-    // Mark overdue without changing task.date
-    tasks.forEach(task => {
-        const taskDate = new Date(task.originalDate || task.date);
-        taskDate.setHours(0,0,0,0);
-        if (taskDate.getTime() < todayTime && !task.completed) {
-            const diff = todayTime - taskDate.getTime();
-            task.daysOverdue = Math.floor(diff / (1000 * 60 * 60 * 24));
-            // Preserve original category before overriding
-            if (task.category !== 'overdue') {
-                task.originalCategory = task.category;
+    tasks.forEach(t => {
+        const origDate = midnightOf(t.originalDate || t.date);
+
+        if (origDate < todayTime && !t.completed) {
+            if (t.pinned) {
+                // Pinned: silently move to today, no overdue marker
+                t.date = toLocalISO(toYMD(today) + 'T12:00:00');
+                delete t.daysOverdue;
+                t.category = t.originalCategory || t.category;
+            } else {
+                // Normal overdue
+                t.daysOverdue = Math.round((todayTime - origDate) / 86400000);
+                if (t.category !== 'overdue') t.originalCategory = t.category;
+                t.category = 'overdue';
+                t.date     = today.toISOString();
             }
-            task.category = 'overdue';
-            // Move display date to today so it appears in today's card
-            task.date = today.toISOString();
         }
     });
 
-    saveToLocalStorage();
+    save();
 }
 
-// --- Render ---
-function renderCalendar() {
-    const calendarEl = document.getElementById('calendar');
-    if (!calendarEl) return;
-    calendarEl.innerHTML = '';
+// =============================================================
+//  Render helpers
+// =============================================================
+function buildDeadlineBadge(task) {
+    // The task date IS the deadline – show days remaining / overdue
+    if (task.pinned) return '<span class="pin-badge">📌 pinned</span>';
+    if (task.daysOverdue) return `<span class="overdue-counter">${task.daysOverdue}d late</span>`;
 
-    for (let i = 0; i < 15; i++) {
-        const currentDate = new Date(today);
-        currentDate.setDate(today.getDate() + i);
-        const isToday = i === 0;
-        const dateString = currentDate.toISOString();
-
-        const card = document.createElement('div');
-        card.className = `day-card ${isToday ? 'today' : ''}`;
-
-        // Add button only on today's card; other days have no add button
-        const addBtn = isToday
-            ? `<button class="btn-add" title="Add task for today" onclick="openModal('${dateString}')">+</button>`
-            : '';
-
-        card.innerHTML = `
-            <div class="day-header">
-                <div>
-                    <span class="date-number">${currentDate.getDate()}</span>
-                    <span class="date-label">${currentDate.toLocaleDateString('en-US', { weekday: 'short', month: 'short' })}</span>
-                </div>
-                ${addBtn}
-            </div>
-            <div class="task-list" id="list-${i}"></div>
-        `;
-        calendarEl.appendChild(card);
-        renderTasksForDate(dateString, `list-${i}`);
-    }
-}
-
-function renderListView() {
-    const container = document.getElementById('list-view');
-    if (!container) return;
-
-    container.innerHTML = '<h2>Full Task List</h2><div id="list-content"></div>';
-    const content = document.getElementById('list-content');
-
-    const uniqueTimestamps = [...new Set(tasks.map(t => {
-        const d = new Date(t.date);
-        d.setHours(0, 0, 0, 0);
-        return d.getTime();
-    }))].sort((a, b) => a - b);
-
-    uniqueTimestamps.forEach((timestamp, idx) => {
-        const dateObj = new Date(timestamp);
-        const section = document.createElement('div');
-        section.className = 'list-section';
-        section.innerHTML = `
-            <div class="list-section-header">
-                ${dateObj.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
-            </div>
-            <div id="list-group-${idx}" class="list-group-container"></div>
-        `;
-        content.appendChild(section);
-        renderTasksForDate(timestamp, `list-group-${idx}`);
-    });
+    const daysLeft = daysBetween(today, midnightOf(task.originalDate || task.date));
+    if (daysLeft < 0)  return `<div class="due-warning">Passed ${Math.abs(daysLeft)}d ago</div>`;
+    if (daysLeft === 0) return `<div class="due-warning">Due TODAY</div>`;
+    if (daysLeft <= 3)  return `<div class="due-warning">${daysLeft}d left</div>`;
+    if (daysLeft <= 7)  return `<div class="due-badge">${daysLeft}d left</div>`;
+    return '';  // no badge needed far in the future
 }
 
 function renderTasksForDate(dateValue, containerId) {
     const container = document.getElementById(containerId);
     if (!container) return;
 
-    const targetDateObj = new Date(dateValue);
-    targetDateObj.setHours(0, 0, 0, 0);
-    const targetDate = targetDateObj.getTime();
-
-    const dayTasks = tasks.filter(t => {
-        const tDate = new Date(t.date);
-        tDate.setHours(0, 0, 0, 0);
-        return tDate.getTime() === targetDate;
-    });
+    const target = midnightOf(dateValue).getTime();
+    const dayTasks = tasks.filter(t => midnightOf(t.date).getTime() === target);
 
     dayTasks.forEach(task => {
-        const taskEl = document.createElement('div');
-        taskEl.className = `task-item ${task.completed ? 'completed' : ''}`;
-        taskEl.setAttribute('data-category', task.category);
-
-        taskEl.onclick = (e) => {
-            if (e.target.type !== 'checkbox' && !e.target.classList.contains('btn-delete') && !e.target.classList.contains('task-link')) {
+        const el = document.createElement('div');
+        el.className = `task-item ${task.completed ? 'completed' : ''}`;
+        el.setAttribute('data-category', task.category);
+        el.onclick = e => {
+            if (!e.target.matches('input[type=checkbox], .btn-delete, .task-link')) {
                 openModal(task.date, task.id);
             }
         };
 
-        // Overdue badge
-        const overdueLabel = task.daysOverdue
-            ? `<span class="overdue-counter">${task.daysOverdue}d late</span>`
-            : '';
-
-        // Days remaining badge (for non-overdue tasks with deadlines)
-        let deadlineBadge = '';
-        if (task.deadline) {
-            const daysLeft = daysBetween(today, new Date(task.deadline + 'T12:00:00'));
-            if (daysLeft < 0) {
-                deadlineBadge = `<div class="due-warning">Deadline passed ${Math.abs(daysLeft)}d ago</div>`;
-            } else if (daysLeft === 0) {
-                deadlineBadge = `<div class="due-warning">Due TODAY</div>`;
-            } else if (daysLeft <= 3) {
-                deadlineBadge = `<div class="due-warning">${daysLeft}d remaining</div>`;
-            } else {
-                deadlineBadge = `<div class="due-badge">${daysLeft}d remaining</div>`;
-            }
-        }
-
-        // Link button
+        const badge   = buildDeadlineBadge(task);
         const linkBtn = task.link
             ? `<a href="${escapeAttr(task.link)}" target="_blank" rel="noopener" class="task-link" onclick="event.stopPropagation()" title="Open link">🔗</a>`
             : '';
 
-        taskEl.innerHTML = `
-            <div style="display:flex; align-items:center; flex:1; min-width:0;">
+        el.innerHTML = `
+            <div style="display:flex;align-items:center;flex:1;min-width:0;">
                 <input type="checkbox" class="task-checkbox" ${task.completed ? 'checked' : ''}
-                       onclick="event.stopPropagation(); completeTask(${task.id})">
+                       onclick="event.stopPropagation();completeTask(${task.id})">
                 <div class="task-content">
-                    <div style="font-weight:bold;">${escapeHtml(task.title)} ${overdueLabel}</div>
-                    ${deadlineBadge}
+                    <div style="font-weight:bold;">${escapeHtml(task.title)}</div>
+                    ${badge}
                 </div>
             </div>
-            <div style="display:flex; align-items:center; gap:8px; flex-shrink:0;">
+            <div style="display:flex;align-items:center;gap:8px;flex-shrink:0;">
                 ${linkBtn}
                 <div class="task-actions">
-                    <button class="btn-action btn-delete" onclick="event.stopPropagation(); deleteTask(${task.id})">✖</button>
+                    <button class="btn-action btn-delete" onclick="event.stopPropagation();deleteTask(${task.id})">✖</button>
                 </div>
-            </div>
-        `;
-        container.appendChild(taskEl);
+            </div>`;
+        container.appendChild(el);
     });
 }
 
-function escapeHtml(str) {
-    return String(str)
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;');
-}
+// =============================================================
+//  Calendar / List render
+// =============================================================
+function renderCalendar() {
+    const calEl = document.getElementById('calendar');
+    if (!calEl) return;
+    calEl.innerHTML = '';
 
-function escapeAttr(str) {
-    return String(str).replace(/"/g, '&quot;').replace(/'/g, '&#39;');
-}
+    for (let i = 0; i < 15; i++) {
+        const d = new Date(today);
+        d.setDate(today.getDate() + i);
+        const isToday = i === 0;
+        const card = document.createElement('div');
+        card.className = `day-card ${isToday ? 'today' : ''}`;
 
-function updateCategoryPreview(val) {
-    const colors = {
-        default: 'grey', exam: '#ff4444', task: '#ff66b2',
-        overdue: '#800080', game: '#ffa500', study: '#007bff',
-        task_deadline: '#9370db'
-    };
-    const preview = document.getElementById('categoryPreview');
-    if (preview) preview.style.backgroundColor = colors[val] || 'grey';
-}
+        // Non-today cards are clickable to add tasks
+        if (!isToday) {
+            card.title   = 'Click to add task for this day';
+            card.onclick = e => { if (!e.target.closest('.task-item')) openModal(d.toISOString()); };
+        }
 
-// --- Init ---
-window.onclick = (event) => {
-    if (event.target.classList.contains('modal-overlay')) {
-        closeModal();
-        closeDailyModal();
+        const addBtn = isToday
+            ? `<button class="btn-add" title="Add task for today" onclick="event.stopPropagation();openModal('${d.toISOString()}')">+</button>`
+            : '';
+
+        card.innerHTML = `
+            <div class="day-header">
+                <div>
+                    <span class="date-number">${d.getDate()}</span>
+                    <span class="date-label">${d.toLocaleDateString('en-US', { weekday: 'short', month: 'short' })}</span>
+                </div>
+                ${addBtn}
+            </div>
+            <div class="task-list" id="list-${i}"></div>`;
+        calEl.appendChild(card);
+        renderTasksForDate(d.toISOString(), `list-${i}`);
     }
-};
+}
 
-loadFromLocalStorage();
+function renderListView() {
+    const container = document.getElementById('list-view');
+    if (!container) return;
+    container.innerHTML = '<h2 style="margin-top:0;">Full Task List</h2><div id="list-content"></div>';
+    const content = document.getElementById('list-content');
+
+    const timestamps = [...new Set(tasks.map(t => midnightOf(t.date).getTime()))].sort((a, b) => a - b);
+    timestamps.forEach((ts, idx) => {
+        const section = document.createElement('div');
+        section.className = 'list-section';
+        section.innerHTML = `
+            <div class="list-section-header">
+                ${new Date(ts).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
+            </div>
+            <div id="list-group-${idx}" class="list-group-container"></div>`;
+        content.appendChild(section);
+        renderTasksForDate(ts, `list-group-${idx}`);
+    });
+}
+
+// =============================================================
+//  Misc
+// =============================================================
+function updateCategoryPreview(val) {
+    const colors = { default:'grey', exam:'#ff4444', task:'#ff66b2', overdue:'#800080', game:'#ffa500', study:'#007bff', task_deadline:'#9370db' };
+    const el = document.getElementById('categoryPreview');
+    if (el) el.style.backgroundColor = colors[val] || 'grey';
+}
+
+function escapeHtml(s) {
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function escapeAttr(s) {
+    return String(s).replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
+// Close modals on overlay click
+window.addEventListener('click', e => {
+    if (e.target.classList.contains('modal-overlay')) { closeModal(); closeDailyModal(); }
+});
+
+// =============================================================
+//  Boot
+// =============================================================
+load();
 processOldTasks();
 checkAndApplyDailyTemplates();
 if (localStorage.getItem('org_app_edit_mode') === 'true') document.body.classList.add('edit-mode');

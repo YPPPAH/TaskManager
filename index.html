@@ -11,48 +11,46 @@
         <div class="sidebar-content">
             <h2>Settings</h2>
             <button class="menu-btn" onclick="toggleView()" id="viewToggleBtn">Switch to List View</button>
-            <button class="menu-btn" style="margin-top: 10px;" onclick="toggleTaskActions()">Toggle Delete Mode</button>
-            <button class="menu-btn" style="margin-top: 10px;" onclick="openDailyModal()">Manage Daily Tasks</button>
+            <button class="menu-btn" style="margin-top:10px;" onclick="toggleTaskActions()">Toggle Delete Mode</button>
+            <button class="menu-btn" style="margin-top:10px;" onclick="openDailyModal()">Manage Daily Tasks</button>
 
-            <hr style="border: 0; border-top: 1px solid var(--border-color); margin: 20px 0;">
+            <hr class="sidebar-hr">
             <button class="menu-btn" onclick="exportData()">⬇ Export Data</button>
-            <button class="menu-btn" style="margin-top: 10px;" onclick="importData()">⬆ Import Data</button>
+            <button class="menu-btn" style="margin-top:10px;" onclick="importData()">⬆ Import Data</button>
 
-            <hr style="border: 0; border-top: 1px solid var(--border-color); margin: 20px 0;">
+            <hr class="sidebar-hr">
             <button class="menu-btn m-toggle" data-app="wallpaper">Launch Wallpaper</button>
-            <button class="menu-btn m-toggle" data-app="telegram" style="margin-top: 10px;">Launch Telegram</button>
-            <button class="menu-btn m-soft-toggle" data-app="chrome" style="margin-top: 10px;">Launch Chrome</button>
-            <button class="menu-btn" style="margin-top: 10px;" onclick="window.location.href='steam://launch/582660'">Launch BDO</button>
+            <button class="menu-btn m-toggle" data-app="telegram" style="margin-top:10px;">Launch Telegram</button>
+            <button class="menu-btn m-soft-toggle" data-app="chrome" style="margin-top:10px;">Launch Chrome</button>
+            <button class="menu-btn" style="margin-top:10px;" onclick="window.location.href='steam://launch/582660'">Launch BDO</button>
 
-            <hr style="border: 0; border-top: 1px solid var(--border-color); margin: 20px 0;">
+            <hr class="sidebar-hr">
             <button class="btn-main-add" onclick="openModal(new Date().toISOString())">＋ Quick Add Task</button>
         </div>
         <button id="sidebarToggle" onclick="toggleSidebar()" aria-label="Toggle sidebar">
-            <svg id="toggleIcon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <svg id="toggleIcon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"
+                 fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                 <polyline id="toggleIconArrow" points="15 18 9 12 15 6"></polyline>
             </svg>
         </button>
     </div>
 
     <div id="calendar"></div>
-    <div id="list-view" style="display: none;"></div>
+    <div id="list-view" style="display:none;"></div>
 
-    <!-- Task Modal -->
+    <!-- ── Task Modal ── -->
     <div class="modal-overlay" id="taskModal">
         <div class="modal">
             <h3 id="modalTitle">New Task</h3>
-            <div id="categoryPreview" style="height: 4px; width: 100%; border-radius: 2px; margin-bottom: 15px; background: grey;"></div>
+            <div id="categoryPreview" class="category-preview-bar"></div>
 
-            <label class="field-label">Task Name:</label>
+            <label class="field-label">Task Name</label>
             <input type="text" id="taskTitle" placeholder="What needs to be done?">
 
-            <label class="field-label">Date to Perform Task:</label>
+            <label class="field-label">Due Date</label>
             <input type="date" id="taskDate">
 
-            <label class="field-label">Optional Deadline (Due Date):</label>
-            <input type="date" id="taskDeadline">
-
-            <label class="field-label">Category:</label>
+            <label class="field-label">Category</label>
             <select id="taskCategory" onchange="updateCategoryPreview(this.value)">
                 <option value="default">Default (Grey)</option>
                 <option value="task">Assignment (Pink)</option>
@@ -62,28 +60,52 @@
                 <option value="game">Game (Orange)</option>
             </select>
 
-            <label class="field-label">Link (optional):</label>
+            <label class="field-label">Link (optional)</label>
             <input type="url" id="taskLink" placeholder="https://...">
 
-            <button id="saveTaskBtn" onclick="saveTask()">Save Task</button>
+            <label class="field-label pin-label">
+                <input type="checkbox" id="taskPinned" class="pin-checkbox">
+                Pin to today — never marked overdue
+            </label>
+
+            <button id="saveTaskBtn" onclick="saveTask()">Add Task</button>
         </div>
     </div>
 
-    <!-- Daily Tasks Modal -->
+    <!-- ── Daily Templates Modal ── -->
     <div class="modal-overlay" id="dailyModal">
-        <div class="modal">
-            <h3>Daily Templates</h3>
-            <div id="dailyTemplateList" style="margin-bottom: 15px; max-height: 200px; overflow-y: auto;"></div>
+        <div class="modal modal-daily">
+            <h3 style="margin-top:0;">Daily Routines</h3>
 
+            <!-- Existing templates list -->
+            <div id="dailyTemplateList" class="daily-list"></div>
+
+            <hr class="modal-hr">
+
+            <!-- Add / Edit form -->
+            <p id="dailyFormLabel" class="field-label" style="margin-bottom:8px;">Add new routine</p>
+
+            <label class="field-label">Name</label>
             <input type="text" id="newDailyTitle" placeholder="Routine task name...">
-            <select id="newDailyCategory" style="width: 100%; padding: 10px; margin-bottom: 10px; background: #121212; color: white; border: 1px solid #333;">
-                <option value="default">Default</option>
-                <option value="task">Assignment</option>
-                <option value="study">Study</option>
-                <option value="game">Game</option>
+
+            <label class="field-label">Category</label>
+            <select id="newDailyCategory">
+                <option value="default">Default (Grey)</option>
+                <option value="task">Assignment (Pink)</option>
+                <option value="task_deadline">Task Deadline (Purple)</option>
+                <option value="study">Study (Blue)</option>
+                <option value="exam">Exam (Red)</option>
+                <option value="game">Game (Orange)</option>
             </select>
-            <button onclick="addDailyTemplate()" style="background: var(--btn-create); margin-bottom: 10px; width: 100%;">Add to Routine</button>
-            <button onclick="closeDailyModal()" style="background: #444; width: 100%;">Close</button>
+
+            <label class="field-label">Link (optional)</label>
+            <input type="url" id="newDailyLink" placeholder="https://...">
+
+            <div style="display:flex;gap:8px;margin-top:4px;">
+                <button id="dailySaveBtn" onclick="saveDailyTemplate()" style="flex:1;background:var(--btn-create);">Add to Routine</button>
+                <button id="dailyCancelEdit" onclick="resetDailyForm()" style="display:none;background:#555;flex:0 0 auto;width:auto;padding:10px 14px;">Cancel</button>
+            </div>
+            <button onclick="closeDailyModal()" style="background:#333;margin-top:8px;width:100%;">Close</button>
         </div>
     </div>
 

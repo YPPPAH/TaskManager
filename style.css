@@ -409,3 +409,121 @@ body.edit-mode .task-actions {
     margin-bottom: 5px;
     margin-top: 5px;
 }
+
+/* ── Sidebar HR ── */
+.sidebar-hr {
+    border: 0;
+    border-top: 1px solid var(--border-color);
+    margin: 20px 0;
+}
+
+/* ── Category preview bar in task modal ── */
+.category-preview-bar {
+    height: 4px;
+    width: 100%;
+    border-radius: 2px;
+    margin-bottom: 15px;
+    background: grey;
+}
+
+/* ── Pin checkbox label in modal ── */
+.pin-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    margin-bottom: 14px;
+    margin-top: 2px;
+}
+.pin-checkbox {
+    appearance: auto !important;   /* let browser render it natively */
+    width: 16px !important;
+    height: 16px !important;
+    min-width: 16px !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    cursor: pointer;
+    accent-color: #ffa500;
+}
+
+/* ── Pin badge on task card ── */
+.pin-badge {
+    font-size: 0.7rem;
+    color: #ffa500;
+    margin-top: 3px;
+    display: inline-block;
+}
+
+/* ── Daily Routines Modal ── */
+.modal-daily {
+    width: 360px;
+    max-height: 90vh;
+    overflow-y: auto;
+}
+.daily-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-bottom: 4px;
+    max-height: 220px;
+    overflow-y: auto;
+}
+.daily-list::-webkit-scrollbar { width: 5px; }
+.daily-list::-webkit-scrollbar-thumb { background: #444; border-radius: 4px; }
+
+.daily-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #121212;
+    padding: 8px 10px;
+    border-radius: 6px;
+    border-left: 4px solid grey;
+    gap: 8px;
+}
+.daily-item-info {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex: 1;
+    min-width: 0;
+}
+.daily-item-title {
+    font-size: 0.88rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.daily-item-actions {
+    display: flex;
+    gap: 5px;
+    flex-shrink: 0;
+}
+.btn-daily-edit {
+    background: #444;
+    border: none;
+    color: white;
+    border-radius: 4px;
+    padding: 3px 8px;
+    cursor: pointer;
+    font-size: 0.85rem;
+}
+.btn-daily-edit:hover { background: #555; }
+.btn-daily-del {
+    background: darkred;
+    border: none;
+    color: white;
+    border-radius: 4px;
+    padding: 3px 8px;
+    cursor: pointer;
+    font-size: 0.85rem;
+}
+.btn-daily-del:hover { background: #c0392b; }
+
+.modal-hr {
+    border: 0;
+    border-top: 1px solid var(--border-color);
+    margin: 12px 0;
+}
