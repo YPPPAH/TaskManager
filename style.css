@@ -1,26 +1,32 @@
-/* Dark Theme Variables */
+/* =============================================================
+   Dark Theme Variables
+   ============================================================= */
 :root {
-    --bg-color: #121212;
+    --bg-color:      #121212;
     --surface-color: #1e1e1e;
-    --border-color: #333333;
-    --text-main: #ffffff;
-    --text-muted: #a0a0a0;
+    --border-color:  #333333;
+    --text-main:     #ffffff;
+    --text-muted:    #a0a0a0;
 
     /* Action Colors */
-    --btn-create: darkgreen;
-    --btn-delete: darkred;
+    --btn-create:   darkgreen;
+    --btn-delete:   darkred;
     --btn-complete: #b8860b;
 
     /* Category Colors */
-    --cat-default: grey;
-    --cat-exam: #ff4444;
-    --cat-task: #ff66b2;
-    --cat-overdue: #800080;
-    --cat-game: #ffa500;
-    --cat-study: #007bff;
+    --cat-default:       grey;
+    --cat-exam:          #ff4444;
+    --cat-task:          #ff66b2;
+    --cat-overdue:       #7a6a8a;   /* muted dusty purple — less aggressive */
+    --cat-game:          #ffa500;
+    --cat-study:         #007bff;
     --cat-task-deadline: #9370db;
+    --cat-pinned:        #00bcd4;   /* teal/cyan for pinned */
 }
 
+/* =============================================================
+   Base
+   ============================================================= */
 body {
     background-color: var(--bg-color);
     color: var(--text-main);
@@ -34,77 +40,226 @@ body {
     justify-content: center;
 }
 
-/* Layout Grid */
+/* =============================================================
+   Calendar Grid
+   — reduced row height + tighter columns so cards breathe
+   ============================================================= */
 #calendar {
     display: grid;
-    grid-template-columns: 350px repeat(7, minmax(140px, 1fr));
-    grid-template-rows: repeat(2, 400px);
-    gap: 15px;
+    grid-template-columns: 300px repeat(7, minmax(120px, 1fr));
+    grid-template-rows: repeat(2, 370px);
+    gap: 10px;
     width: 100%;
     max-width: 1600px;
 }
 
-/* Day Card Styling */
+/* =============================================================
+   Day Cards
+   ============================================================= */
 .day-card {
     background-color: var(--surface-color);
-    border: 3px solid var(--border-color);
+    border: 2px solid var(--border-color);
     border-radius: 8px;
     display: flex;
     flex-direction: column;
-    padding: 15px 10px 15px 15px;
+    padding: 10px 8px 10px 12px;
     overflow: hidden;
     cursor: default;
 }
 
-/* Clicking a future day card opens Add Task modal for that day */
 .day-card:not(.today) {
     cursor: pointer;
     transition: border-color 0.15s;
 }
-.day-card:not(.today):hover {
-    border-color: #555;
-}
+.day-card:not(.today):hover { border-color: #555; }
 
-/* Make Today Span 2 Rows */
+/* Today: taller, spanning both rows */
 .day-card.today {
     grid-column: 1;
     grid-row: 1 / span 2;
     border-color: #555;
+    padding: 14px 10px 14px 16px;
 }
 
 .day-header {
     display: flex;
     justify-content: space-between;
     align-items: flex-start;
-    margin-bottom: 15px;
-    padding-bottom: 10px;
+    margin-bottom: 8px;
+    padding-bottom: 8px;
     border-bottom: 1px solid var(--border-color);
     flex-shrink: 0;
 }
 
-.date-number {
-    font-size: 1.5rem;
-    font-weight: bold;
+/* Compact date numbers on non-today cards */
+.date-number { font-size: 1.2rem; font-weight: bold; line-height: 1; }
+.day-card.today .date-number { font-size: 2.2rem; }
+
+.date-label { font-size: 0.78rem; color: var(--text-muted); margin-top: 2px; }
+
+/* =============================================================
+   Task list inside a card
+   ============================================================= */
+.task-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    flex-grow: 1;
+    overflow-y: auto;
+    padding-right: 4px;
+}
+.task-list::-webkit-scrollbar { width: 4px; }
+.task-list::-webkit-scrollbar-thumb { background: #444; border-radius: 4px; }
+
+/* =============================================================
+   Task Item  — compact on calendar, normal on list view
+   ============================================================= */
+.task-item {
+    background-color: #252525;
+    padding: 7px 8px;
+    border-radius: 5px;
+    border-left: 4px solid var(--cat-default);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    animation: fadeIn 0.25s ease;
+    flex-shrink: 0;
+    cursor: pointer;
+    transition: background 0.15s;
+}
+.task-item:hover { background-color: #2c2c2c; }
+
+/* List view: give tasks a little more breathing room */
+#list-view .task-item { padding: 10px 12px; border-left-width: 5px; }
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-4px); }
+    to   { opacity: 1; transform: translateY(0); }
 }
 
-.day-card.today .date-number {
-    font-size: 2.5rem;
+.task-content {
+    flex-grow: 1;
+    margin-right: 8px;
+    word-break: break-word;
+    min-width: 0;
 }
 
-.date-label {
-    font-size: 0.9rem;
+.task-title {
+    font-weight: 600;
+    font-size: 0.82rem;
+    line-height: 1.3;
+}
+/* List view titles a touch larger */
+#list-view .task-title { font-size: 0.95rem; }
+
+/* =============================================================
+   Category Borders
+   ============================================================= */
+.task-item[data-category="exam"]          { border-left-color: var(--cat-exam); }
+.task-item[data-category="task"]          { border-left-color: var(--cat-task); }
+.task-item[data-category="game"]          { border-left-color: var(--cat-game); }
+.task-item[data-category="study"]         { border-left-color: var(--cat-study); }
+.task-item[data-category="task_deadline"] { border-left-color: var(--cat-task-deadline); }
+
+/* Overdue — muted dusty tone, readable but not shouty */
+.task-item[data-category="overdue"] {
+    border-left-color: var(--cat-overdue);
+    color: #c4b8d0;           /* soft lavender text */
+}
+
+/* Pinned — teal accent */
+.task-item[data-category="pinned"] {
+    border-left-color: var(--cat-pinned);
+    color: #b2ebf2;
+}
+
+/* Completed */
+.task-item.completed {
+    opacity: 0.45;
+    text-decoration: line-through;
+    border-left-color: #444;
+}
+
+/* =============================================================
+   Delete button  — clean icon, no background
+   ============================================================= */
+.task-actions { display: none; }
+body.edit-mode .task-actions { display: flex; }
+
+.btn-delete-icon {
+    background: transparent;
+    border: none;
     color: var(--text-muted);
+    cursor: pointer;
+    padding: 3px;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: color 0.15s, background 0.15s;
+    line-height: 1;
+}
+.btn-delete-icon:hover {
+    color: #ff6b6b;
+    background: rgba(255, 107, 107, 0.12);
+}
+.btn-delete-icon:active { transform: scale(0.9); }
+
+/* =============================================================
+   Deadline Badges
+   ============================================================= */
+.due-badge {
+    font-size: 0.65rem;
+    background-color: #2a2a2a;
+    color: #aaaaaa;
+    padding: 1px 5px;
+    border-radius: 3px;
+    display: inline-block;
+    margin-top: 3px;
+    border: 1px solid #3a3a3a;
+}
+.due-warning {
+    font-size: 0.65rem;
+    background-color: #5c1a1a;
+    color: #ffaaaa;
+    padding: 1px 5px;
+    border-radius: 3px;
+    display: inline-block;
+    margin-top: 3px;
+    font-weight: 600;
+}
+.overdue-counter {
+    font-size: 0.65rem;
+    background: rgba(122, 106, 138, 0.35);
+    color: #c4b8d0;
+    padding: 1px 5px;
+    border-radius: 3px;
+    margin-left: 6px;
+    border: 1px solid rgba(122,106,138,0.4);
 }
 
-/* Buttons */
+/* =============================================================
+   Pin badge
+   ============================================================= */
+.pin-badge {
+    font-size: 0.65rem;
+    color: var(--cat-pinned);
+    margin-top: 3px;
+    display: inline-block;
+    opacity: 0.85;
+}
+
+/* =============================================================
+   Add button (today card)
+   ============================================================= */
 .btn-add {
     background-color: var(--btn-create);
     color: white;
     border: none;
     border-radius: 50%;
-    width: 28px;
-    height: 28px;
-    font-size: 1.4rem;
+    width: 26px;
+    height: 26px;
+    font-size: 1.3rem;
     cursor: pointer;
     display: flex;
     align-items: center;
@@ -112,127 +267,86 @@ body {
     padding: 0;
     margin-top: 4px;
     transition: opacity 0.2s;
+    flex-shrink: 0;
 }
 .btn-add:hover { opacity: 0.8; }
 
-.btn-action {
-    width: 22px;
-    height: 22px;
-    border-radius: 50%;
-    border: none;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 0;
-    color: white;
-    font-weight: bold;
-    font-size: 0.75rem;
-    transition: transform 0.1s;
-}
-.btn-action:active { transform: scale(0.9); }
-.btn-complete { background-color: var(--btn-complete); }
-.btn-delete { background-color: var(--btn-delete); }
-
-/* Task Item Styling */
-.task-list {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    flex-grow: 1;
-    overflow-y: auto;
-    padding-right: 5px;
-}
-.task-list::-webkit-scrollbar { width: 6px; }
-.task-list::-webkit-scrollbar-thumb { background: #444; border-radius: 4px; }
-
-.task-item {
-    background-color: #252525;
-    padding: 12px;
-    border-radius: 6px;
-    border-left: 5px solid var(--cat-default);
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    animation: fadeIn 0.3s ease;
-    flex-shrink: 0;
-    cursor: pointer;
-    transition: transform 0.1s, background 0.2s;
-}
-.task-item:hover { background-color: #2a2a2a; }
-
-@keyframes fadeIn {
-    from { opacity: 0; transform: translateY(-5px); }
-    to { opacity: 1; transform: translateY(0); }
-}
-
-.task-content {
-    flex-grow: 1;
-    margin-right: 10px;
-    word-break: break-word;
-    font-size: 0.95rem;
-}
-
-/* Task Actions Toggle */
-.task-actions {
-    display: none;
-}
-body.edit-mode .task-actions {
-    display: flex;
-}
-
-/* Category Borders */
-.task-item[data-category="exam"]          { border-left-color: var(--cat-exam); }
-.task-item[data-category="task"]          { border-left-color: var(--cat-task); }
-.task-item[data-category="overdue"]       { border-left-color: var(--cat-overdue); color: #d8b4e2; }
-.task-item[data-category="game"]          { border-left-color: var(--cat-game); }
-.task-item[data-category="study"]         { border-left-color: var(--cat-study); }
-.task-item[data-category="task_deadline"] { border-left-color: var(--cat-task-deadline); }
-
-/* Completed State */
-.task-item.completed {
-    opacity: 0.5;
-    text-decoration: line-through;
-    border-left-color: #555;
-}
-
-/* Link button inside tasks */
+/* =============================================================
+   Link button inside tasks
+   ============================================================= */
 .task-link {
-    font-size: 1rem;
+    font-size: 0.9rem;
     text-decoration: none;
-    opacity: 0.7;
+    opacity: 0.55;
     transition: opacity 0.15s;
     flex-shrink: 0;
+    line-height: 1;
 }
 .task-link:hover { opacity: 1; }
 
-/* Modal Styling */
+/* =============================================================
+   Task Checkbox
+   ============================================================= */
+.task-checkbox {
+    appearance: none;
+    width: 16px;
+    height: 16px;
+    min-width: 16px;
+    border: 2px solid #555;
+    border-radius: 3px;
+    cursor: pointer;
+    margin-right: 10px;
+    position: relative;
+    transition: all 0.15s;
+    flex-shrink: 0;
+}
+.task-checkbox:checked {
+    background-color: var(--btn-complete);
+    border-color: var(--btn-complete);
+}
+.task-checkbox:checked::after {
+    content: '✔';
+    position: absolute;
+    color: white;
+    font-size: 11px;
+    left: 2px;
+    top: -1px;
+}
+
+/* =============================================================
+   Modal
+   ============================================================= */
 .modal-overlay {
     display: none;
     position: fixed;
     top: 0; left: 0; width: 100%; height: 100%;
-    background: rgba(0,0,0,0.7);
+    background: rgba(0,0,0,0.72);
     align-items: center;
     justify-content: center;
     z-index: 100;
 }
 .modal {
     background: var(--surface-color);
-    padding: 25px;
-    border-radius: 8px;
-    width: 300px;
+    padding: 24px;
+    border-radius: 10px;
+    width: 310px;
     border: 1px solid var(--border-color);
 }
-.modal h3 { margin-top: 0; }
+.modal h3 { margin-top: 0; margin-bottom: 8px; }
 .modal input, .modal select {
     width: 100%;
-    padding: 10px;
-    margin-bottom: 15px;
-    background: #121212;
+    padding: 9px 10px;
+    margin-bottom: 12px;
+    background: #0e0e0e;
     border: 1px solid var(--border-color);
     color: white;
-    border-radius: 4px;
+    border-radius: 5px;
     box-sizing: border-box;
+    font-size: 0.88rem;
+}
+.modal input:focus, .modal select:focus {
+    outline: none;
+    border-color: #555;
 }
 .modal button {
     width: 100%;
@@ -240,43 +354,54 @@ body.edit-mode .task-actions {
     background: var(--btn-create);
     color: white;
     border: none;
-    border-radius: 4px;
+    border-radius: 5px;
     cursor: pointer;
     font-weight: bold;
+    font-size: 0.9rem;
 }
 
-/* Deadline Badges */
-.due-badge {
-    font-size: 0.7rem;
-    background-color: #333333;
-    color: #cccccc;
-    padding: 2px 6px;
-    border-radius: 4px;
-    display: inline-block;
-    margin-top: 5px;
-}
-.due-warning {
-    font-size: 0.7rem;
-    background-color: darkred;
-    color: white;
-    padding: 2px 6px;
-    border-radius: 4px;
-    display: inline-block;
-    margin-top: 5px;
-    font-weight: bold;
+.category-preview-bar {
+    height: 3px;
+    width: 100%;
+    border-radius: 2px;
+    margin-bottom: 14px;
+    background: grey;
+    transition: background 0.2s;
 }
 
-/* Overdue counter badge (inline next to title) */
-.overdue-counter {
-    background: #ff4444;
-    color: white;
-    font-size: 0.7rem;
-    padding: 2px 6px;
-    border-radius: 10px;
-    margin-left: 8px;
+.field-label {
+    display: block;
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    margin-bottom: 4px;
+    margin-top: 4px;
 }
 
-/* --- Sidebar --- */
+/* Pin checkbox row */
+.pin-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    font-size: 0.82rem;
+    color: var(--text-muted);
+    margin-bottom: 14px;
+    margin-top: 2px;
+}
+.pin-checkbox {
+    appearance: auto !important;
+    width: 15px !important;
+    height: 15px !important;
+    min-width: 15px !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    cursor: pointer;
+    accent-color: var(--cat-pinned);
+}
+
+/* =============================================================
+   Sidebar
+   ============================================================= */
 #sidebar {
     position: fixed;
     right: -250px;
@@ -288,14 +413,14 @@ body.edit-mode .task-actions {
     transition: right 0.3s ease;
     z-index: 1000;
     box-sizing: border-box;
-    overflow: visible; /* must NOT clip — toggle tab sits outside at left:-32px */
+    overflow: visible;
 }
 #sidebar.open { right: 0; }
 
 .sidebar-content {
     padding: 20px;
     height: 100%;
-    overflow-y: auto; /* scroll lives here, not on #sidebar */
+    overflow-y: auto;
     box-sizing: border-box;
 }
 .sidebar-content h2 {
@@ -305,17 +430,25 @@ body.edit-mode .task-actions {
 }
 
 .menu-btn {
-    background-color: #333333;
+    background-color: #2a2a2a;
     color: white;
-    border: 1px solid #555555;
-    padding: 10px;
+    border: 1px solid #444;
+    padding: 9px 10px;
     width: 100%;
-    border-radius: 4px;
+    border-radius: 5px;
     cursor: pointer;
-    font-weight: bold;
-    transition: background-color 0.2s;
+    font-weight: 600;
+    font-size: 0.85rem;
+    transition: background-color 0.15s;
+    text-align: left;
 }
-.menu-btn:hover { background-color: #444444; }
+.menu-btn:hover { background-color: #383838; }
+
+.sidebar-hr {
+    border: 0;
+    border-top: 1px solid var(--border-color);
+    margin: 16px 0;
+}
 
 #sidebarToggle {
     position: absolute;
@@ -334,48 +467,26 @@ body.edit-mode .task-actions {
     align-items: center;
     justify-content: center;
     padding: 0;
+    transition: background 0.15s;
 }
-#sidebarToggle img { display: block; pointer-events: none; }
+#sidebarToggle:hover { background-color: #2a2a2a; }
 
 .btn-main-add {
     background: linear-gradient(135deg, #28a745, #1e7e34);
     color: white;
     border: none;
-    padding: 12px;
+    padding: 11px;
     width: 100%;
-    border-radius: 8px;
+    border-radius: 7px;
     font-weight: bold;
     cursor: pointer;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+    box-shadow: 0 3px 12px rgba(0,0,0,0.3);
+    font-size: 0.9rem;
 }
 
-/* Checkbox */
-.task-checkbox {
-    appearance: none;
-    width: 20px;
-    height: 20px;
-    min-width: 20px;
-    border: 2px solid var(--text-muted);
-    border-radius: 4px;
-    cursor: pointer;
-    margin-right: 12px;
-    position: relative;
-    transition: all 0.2s;
-}
-.task-checkbox:checked {
-    background-color: var(--btn-complete);
-    border-color: var(--btn-complete);
-}
-.task-checkbox:checked::after {
-    content: '✔';
-    position: absolute;
-    color: white;
-    font-size: 14px;
-    left: 3px;
-    top: -1px;
-}
-
-/* List View */
+/* =============================================================
+   List View
+   ============================================================= */
 #list-view {
     width: 100%;
     max-width: 800px;
@@ -385,78 +496,25 @@ body.edit-mode .task-actions {
     height: 90vh;
 }
 .list-section {
-    margin-bottom: 40px;
+    margin-bottom: 36px;
     width: 100%;
 }
 .list-section-header {
-    font-size: 1.1rem;
+    font-size: 1.05rem;
     color: var(--text-muted);
-    margin-bottom: 15px;
+    margin-bottom: 12px;
     border-bottom: 1px solid var(--border-color);
-    padding-bottom: 8px;
+    padding-bottom: 6px;
 }
 .list-group-container {
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    gap: 10px;
 }
 
-/* Modal field labels */
-.field-label {
-    display: block;
-    font-size: 0.8rem;
-    color: var(--text-muted);
-    margin-bottom: 5px;
-    margin-top: 5px;
-}
-
-/* ── Sidebar HR ── */
-.sidebar-hr {
-    border: 0;
-    border-top: 1px solid var(--border-color);
-    margin: 20px 0;
-}
-
-/* ── Category preview bar in task modal ── */
-.category-preview-bar {
-    height: 4px;
-    width: 100%;
-    border-radius: 2px;
-    margin-bottom: 15px;
-    background: grey;
-}
-
-/* ── Pin checkbox label in modal ── */
-.pin-label {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    cursor: pointer;
-    font-size: 0.85rem;
-    color: var(--text-muted);
-    margin-bottom: 14px;
-    margin-top: 2px;
-}
-.pin-checkbox {
-    appearance: auto !important;   /* let browser render it natively */
-    width: 16px !important;
-    height: 16px !important;
-    min-width: 16px !important;
-    margin: 0 !important;
-    padding: 0 !important;
-    cursor: pointer;
-    accent-color: #ffa500;
-}
-
-/* ── Pin badge on task card ── */
-.pin-badge {
-    font-size: 0.7rem;
-    color: #ffa500;
-    margin-top: 3px;
-    display: inline-block;
-}
-
-/* ── Daily Routines Modal ── */
+/* =============================================================
+   Daily Routines Modal
+   ============================================================= */
 .modal-daily {
     width: 360px;
     max-height: 90vh;
@@ -470,7 +528,7 @@ body.edit-mode .task-actions {
     max-height: 220px;
     overflow-y: auto;
 }
-.daily-list::-webkit-scrollbar { width: 5px; }
+.daily-list::-webkit-scrollbar { width: 4px; }
 .daily-list::-webkit-scrollbar-thumb { background: #444; border-radius: 4px; }
 
 .daily-item {
@@ -478,7 +536,7 @@ body.edit-mode .task-actions {
     justify-content: space-between;
     align-items: center;
     background: #121212;
-    padding: 8px 10px;
+    padding: 7px 10px;
     border-radius: 6px;
     border-left: 4px solid grey;
     gap: 8px;
@@ -491,7 +549,7 @@ body.edit-mode .task-actions {
     min-width: 0;
 }
 .daily-item-title {
-    font-size: 0.88rem;
+    font-size: 0.87rem;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -502,25 +560,31 @@ body.edit-mode .task-actions {
     flex-shrink: 0;
 }
 .btn-daily-edit {
-    background: #444;
-    border: none;
-    color: white;
+    background: #333;
+    border: 1px solid #555;
+    color: #ccc;
     border-radius: 4px;
-    padding: 3px 8px;
+    padding: 2px 8px;
     cursor: pointer;
-    font-size: 0.85rem;
+    font-size: 0.82rem;
+    transition: background 0.15s;
 }
-.btn-daily-edit:hover { background: #555; }
+.btn-daily-edit:hover { background: #444; color: white; }
+
 .btn-daily-del {
-    background: darkred;
+    background: transparent;
     border: none;
-    color: white;
+    color: var(--text-muted);
     border-radius: 4px;
-    padding: 3px 8px;
+    padding: 2px 6px;
     cursor: pointer;
-    font-size: 0.85rem;
+    font-size: 0.9rem;
+    transition: color 0.15s, background 0.15s;
 }
-.btn-daily-del:hover { background: #c0392b; }
+.btn-daily-del:hover {
+    color: #ff6b6b;
+    background: rgba(255,107,107,0.12);
+}
 
 .modal-hr {
     border: 0;
