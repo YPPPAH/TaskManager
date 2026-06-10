@@ -17,7 +17,7 @@
     --cat-default:       grey;
     --cat-exam:          #ff4444;
     --cat-task:          #ff66b2;
-    --cat-overdue:       #7a6a8a;   /* muted dusty purple — less aggressive */
+    --cat-overdue:       #800080;
     --cat-game:          #ffa500;
     --cat-study:         #007bff;
     --cat-task-deadline: #9370db;
@@ -164,13 +164,13 @@ body {
 /* Overdue — muted dusty tone, readable but not shouty */
 .task-item[data-category="overdue"] {
     border-left-color: var(--cat-overdue);
-    color: #c4b8d0;           /* soft lavender text */
+    color: #d8b4e2;
 }
 
 /* Pinned — teal accent */
 .task-item[data-category="pinned"] {
     border-left-color: var(--cat-pinned);
-    color: #b2ebf2;
+    color: #b2f0f5;
 }
 
 /* Completed */
@@ -590,4 +590,45 @@ body.edit-mode .task-actions { display: flex; }
     border: 0;
     border-top: 1px solid var(--border-color);
     margin: 12px 0;
+}
+
+/* =============================================================
+   List View — single-line task items
+   ============================================================= */
+.list-view-item {
+    display: flex;
+    align-items: center;
+    padding: 9px 12px;
+    gap: 10px;
+    border-left-width: 5px;
+}
+
+/* Title stays on one line, truncates if too long */
+.list-title {
+    font-size: 0.93rem;
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    flex-shrink: 1;
+    min-width: 0;
+}
+
+/* Badge sits inline, never wraps to next line */
+.list-badge-wrap {
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+}
+.list-badge-wrap .due-badge,
+.list-badge-wrap .due-warning,
+.list-badge-wrap .overdue-counter,
+.list-badge-wrap .pin-badge {
+    margin-top: 0;
+    white-space: nowrap;
+}
+
+/* Completed strikethrough only on title in list view */
+.list-view-item.completed .list-title {
+    text-decoration: line-through;
 }

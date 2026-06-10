@@ -19,12 +19,6 @@
             <button class="menu-btn" style="margin-top:10px;" onclick="importData()">⬆ Import Data</button>
 
             <hr class="sidebar-hr">
-            <button class="menu-btn m-toggle" data-app="wallpaper">Launch Wallpaper</button>
-            <button class="menu-btn m-toggle" data-app="telegram" style="margin-top:10px;">Launch Telegram</button>
-            <button class="menu-btn m-soft-toggle" data-app="chrome" style="margin-top:10px;">Launch Chrome</button>
-            <button class="menu-btn" style="margin-top:10px;" onclick="window.location.href='steam://launch/582660'">Launch BDO</button>
-
-            <hr class="sidebar-hr">
             <button class="btn-main-add" onclick="openModal(new Date().toISOString())">＋ Quick Add Task</button>
         </div>
         <button id="sidebarToggle" onclick="toggleSidebar()" aria-label="Toggle sidebar">
@@ -63,7 +57,7 @@
             <label class="field-label">Link (optional)</label>
             <input type="url" id="taskLink" placeholder="https://...">
 
-            <label class="field-label pin-label">
+            <label class="pin-label">
                 <input type="checkbox" id="taskPinned" class="pin-checkbox">
                 Pin to today — never marked overdue
             </label>
@@ -77,13 +71,11 @@
         <div class="modal modal-daily">
             <h3 style="margin-top:0;">Daily Routines</h3>
 
-            <!-- Existing templates list -->
             <div id="dailyTemplateList" class="daily-list"></div>
 
             <hr class="modal-hr">
 
-            <!-- Add / Edit form -->
-            <p id="dailyFormLabel" class="field-label" style="margin-bottom:8px;">Add new routine</p>
+            <p class="field-label" style="margin-bottom:8px;font-size:0.8rem;">Add / edit routine</p>
 
             <label class="field-label">Name</label>
             <input type="text" id="newDailyTitle" placeholder="Routine task name...">
@@ -110,6 +102,5 @@
     </div>
 
     <script src="app.js"></script>
-    <script src="menu.js"></script>
 </body>
 </html>

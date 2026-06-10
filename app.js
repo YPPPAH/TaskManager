@@ -389,7 +389,8 @@ function processOldTasks() {
         if (origDate < todayTime && !t.completed) {
             if (t.pinned) {
                 t.date     = toLocalISO(toYMD(today) + 'T12:00:00');
-                t.category = t.originalCategory || t.category;
+                if (t.category !== 'pinned') t.originalCategory = t.originalCategory || t.category;
+                t.category = 'pinned';
                 delete t.daysOverdue;
             } else {
                 t.daysOverdue = Math.round((todayTime - origDate) / 86400000);
@@ -413,7 +414,7 @@ function processOldTasks() {
  * In list view: always show days remaining so you have full context.
  */
 function buildDeadlineBadge(task, forceShowDays = false) {
-    if (task.pinned) return '<span class="pin-badge">📌 pinned</span>';
+    if (task.category === 'pinned') return '<span class="pin-badge">📌 pinned</span>';
     if (task.daysOverdue) return `<span class="overdue-counter">${task.daysOverdue}d late</span>`;
 
     const daysLeft = daysBetween(today, midnightOf(task.originalDate || task.date));
@@ -429,12 +430,12 @@ function buildDeadlineBadge(task, forceShowDays = false) {
     return '';
 }
 
-function buildTaskElement(task, forceShowDays = false) {
+function buildTaskElement(task, forceShowDays = false, isListView = false) {
     const el = document.createElement('div');
-    el.className = `task-item ${task.completed ? 'completed' : ''}`;
+    el.className = `task-item ${task.completed ? 'completed' : ''} ${isListView ? 'list-view-item' : ''}`;
     el.setAttribute('data-category', task.category);
     el.onclick = e => {
-        if (!e.target.matches('input[type=checkbox], .btn-delete, .task-link')) {
+        if (!e.target.matches('input[type=checkbox], .btn-delete-icon, .task-link')) {
             openModal(task.date, task.id);
         }
     };
@@ -444,37 +445,47 @@ function buildTaskElement(task, forceShowDays = false) {
         ? `<a href="${escapeAttr(task.link)}" target="_blank" rel="noopener" class="task-link" onclick="event.stopPropagation()" title="Open link">🔗</a>`
         : '';
 
-    el.innerHTML = `
-        <div style="display:flex;align-items:center;flex:1;min-width:0;">
-            <input type="checkbox" class="task-checkbox" ${task.completed ? 'checked' : ''}
-                   onclick="event.stopPropagation();completeTask(${task.id})">
-            <div class="task-content">
-                <div class="task-title">${escapeHtml(task.title)}</div>
-                ${badge}
-            </div>
-        </div>
-        <div style="display:flex;align-items:center;gap:6px;flex-shrink:0;">
-            ${linkBtn}
-            <div class="task-actions">
-                <button class="btn-delete-icon" onclick="event.stopPropagation();deleteTask(${task.id})" title="Delete task">
+    const deleteSvg = `<button class="btn-delete-icon" onclick="event.stopPropagation();deleteTask(${task.id})" title="Delete">
                     <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none"
                          stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                         <line x1="18" y1="6" x2="6" y2="18"></line>
                         <line x1="6" y1="6" x2="18" y2="18"></line>
                     </svg>
-                </button>
+                </button>`;
+
+    if (isListView) {
+        el.innerHTML = `
+            <input type="checkbox" class="task-checkbox" ${task.completed ? 'checked' : ''}
+                   onclick="event.stopPropagation();completeTask(${task.id})">
+            <span class="task-title list-title">${escapeHtml(task.title)}</span>
+            ${badge ? `<span class="list-badge-wrap">${badge}</span>` : ''}
+            <span style="flex:1;min-width:8px;"></span>
+            ${linkBtn}
+            <div class="task-actions">${deleteSvg}</div>`;
+    } else {
+        el.innerHTML = `
+            <div style="display:flex;align-items:center;flex:1;min-width:0;">
+                <input type="checkbox" class="task-checkbox" ${task.completed ? 'checked' : ''}
+                       onclick="event.stopPropagation();completeTask(${task.id})">
+                <div class="task-content">
+                    <div class="task-title">${escapeHtml(task.title)}</div>
+                    ${badge}
+                </div>
             </div>
-        </div>`;
+            <div style="display:flex;align-items:center;gap:6px;flex-shrink:0;">
+                ${linkBtn}
+                <div class="task-actions">${deleteSvg}</div>
+            </div>`;
+    }
     return el;
 }
 
-function renderTasksForDate(dateValue, containerId, forceShowDays = false) {
+function renderTasksForDate(dateValue, containerId, forceShowDays = false, isListView = false) {
     const container = document.getElementById(containerId);
     if (!container) return;
-
     const target   = midnightOf(dateValue).getTime();
     const dayTasks = tasks.filter(t => midnightOf(t.date).getTime() === target);
-    dayTasks.forEach(task => container.appendChild(buildTaskElement(task, forceShowDays)));
+    dayTasks.forEach(task => container.appendChild(buildTaskElement(task, forceShowDays, isListView)));
 }
 
 // =============================================================
@@ -512,7 +523,7 @@ function renderCalendar() {
             </div>
             <div class="task-list" id="list-${i}"></div>`;
         calEl.appendChild(card);
-        renderTasksForDate(d.toISOString(), `list-${i}`, false);
+        renderTasksForDate(d.toISOString(), `list-${i}`, isToday);
     }
 }
 
@@ -536,7 +547,7 @@ function renderListView() {
             </div>
             <div id="list-group-${idx}" class="list-group-container"></div>`;
         content.appendChild(section);
-        renderTasksForDate(ts, `list-group-${idx}`, true);   // ← forceShowDays
+        renderTasksForDate(ts, `list-group-${idx}`, true, true);
     });
 }
 
