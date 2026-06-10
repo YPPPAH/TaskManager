@@ -523,7 +523,7 @@ function renderCalendar() {
             </div>
             <div class="task-list" id="list-${i}"></div>`;
         calEl.appendChild(card);
-        renderTasksForDate(d.toISOString(), `list-${i}`, isToday);
+        renderTasksForDate(d.toISOString(), `list-${i}`, true);
     }
 }
 

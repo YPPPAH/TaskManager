@@ -489,11 +489,11 @@ body.edit-mode .task-actions { display: flex; }
    ============================================================= */
 #list-view {
     width: 100%;
-    max-width: 800px;
+    max-width: 1100px;
     margin: 0 auto;
-    padding: 20px;
+    padding: 30px 40px;
     overflow-y: auto;
-    height: 90vh;
+    height: 96vh;
 }
 .list-section {
     margin-bottom: 36px;
@@ -598,14 +598,14 @@ body.edit-mode .task-actions { display: flex; }
 .list-view-item {
     display: flex;
     align-items: center;
-    padding: 9px 12px;
-    gap: 10px;
+    padding: 12px 16px;
+    gap: 12px;
     border-left-width: 5px;
 }
 
 /* Title stays on one line, truncates if too long */
 .list-title {
-    font-size: 0.93rem;
+    font-size: 1rem;
     font-weight: 600;
     white-space: nowrap;
     overflow: hidden;
