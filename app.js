@@ -99,12 +99,21 @@ function importData() {
                 const existing = new Set(tasks.map(t => t.id));
                 const added = data.tasks.filter(t => !existing.has(t.id));
                 tasks = [...tasks, ...added];
-                if (data.dailyTemplates) {
-                    dailyTemplates = data.dailyTemplates;
+
+                let addedTemplates = 0;
+                if (Array.isArray(data.dailyTemplates)) {
+                    const seenTpl = new Set(dailyTemplates.map(t => t.id ?? t.title));
+                    const newTpl  = data.dailyTemplates.filter(t => !seenTpl.has(t.id ?? t.title));
+                    addedTemplates = newTpl.length;
+                    dailyTemplates = [...dailyTemplates, ...newTpl];
                     localStorage.setItem('org_daily_templates', JSON.stringify(dailyTemplates));
                 }
-                save(); applyView();
-                alert(`Imported ${added.length} new tasks.`);
+
+                save();
+                processOldTasks();            // normalize any imported past-due tasks right away
+                checkAndApplyDailyTemplates();
+                applyView();
+                alert(`Imported ${added.length} new tasks and ${addedTemplates} new routines.`);
             } catch { alert('Failed to parse backup file.'); }
         };
         reader.readAsText(file);
@@ -277,7 +286,7 @@ function renderDailyTemplates() {
         <div class="daily-item" style="border-left-color: var(--cat-${t.category || 'default'})">
             <div class="daily-item-info">
                 <span class="daily-item-title">${escapeHtml(t.title)}</span>
-                ${t.link ? `<a href="${escapeAttr(t.link)}" target="_blank" rel="noopener" class="task-link" title="Open link" onclick="event.stopPropagation()">🔗</a>` : ''}
+                ${safeUrl(t.link) ? `<a href="${escapeAttr(safeUrl(t.link))}" target="_blank" rel="noopener" class="task-link" title="Open link" onclick="event.stopPropagation()">🔗</a>` : ''}
             </div>
             <div class="daily-item-actions">
                 <button class="btn-daily-edit" onclick="editDailyTemplate(${i})">✎</button>
@@ -345,10 +354,11 @@ function checkAndApplyDailyTemplates() {
             .sort((a, b) => new Date(b.originalDate || b.date) - new Date(a.originalDate || a.date));
 
         if (incomplete.length > 0) {
-            const carry    = incomplete[0];
-            carry.date     = toLocalISO(todayStr + 'T12:00:00');
-            carry.category = carry.originalCategory || temp.category;
-            carry.link     = temp.link || carry.link || null;
+            const carry        = incomplete[0];
+            carry.date         = toLocalISO(todayStr + 'T12:00:00');
+            carry.originalDate = toLocalISO(todayStr + 'T12:00:00');  // advance so a carried routine reads as "due today", not overdue
+            carry.category     = carry.originalCategory || temp.category;
+            carry.link         = temp.link || carry.link || null;
             delete carry.daysOverdue;
             updated = true;
         } else {
@@ -441,8 +451,9 @@ function buildTaskElement(task, forceShowDays = false, isListView = false) {
     };
 
     const badge   = buildDeadlineBadge(task, forceShowDays);
-    const linkBtn = task.link
-        ? `<a href="${escapeAttr(task.link)}" target="_blank" rel="noopener" class="task-link" onclick="event.stopPropagation()" title="Open link">🔗</a>`
+    const href    = safeUrl(task.link);
+    const linkBtn = href
+        ? `<a href="${escapeAttr(href)}" target="_blank" rel="noopener" class="task-link" onclick="event.stopPropagation()" title="Open link">🔗</a>`
         : '';
 
     const deleteSvg = `<button class="btn-delete-icon" onclick="event.stopPropagation();deleteTask(${task.id})" title="Delete">
@@ -568,6 +579,17 @@ function escapeHtml(s) {
 }
 function escapeAttr(s) {
     return String(s).replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
+// Only allow http(s) links so a stored "javascript:"/"data:" value can't run when clicked.
+// Scheme-less input is treated as https; returns null when nothing safe can be produced.
+function safeUrl(url) {
+    if (!url) return null;
+    const s = String(url).trim();
+    if (!s) return null;
+    if (/^https?:\/\//i.test(s)) return s;            // already http(s)
+    if (/^[a-z][a-z0-9+.-]*:/i.test(s)) return null;  // some other scheme -> block
+    return 'https://' + s;                            // no scheme -> assume https
 }
 
 window.addEventListener('click', e => {
